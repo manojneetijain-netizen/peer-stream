@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import ThemeToggle from "@/components/feed/ThemeToggle";
 import {
-  Home, Compass, Bookmark, MessageCircle, Bell, Settings,
+  Home, Compass, Bookmark, MessageCircle, Bell,
   User, List, LogOut, TrendingUp,
 } from "lucide-react";
 
@@ -20,7 +20,6 @@ const navItems = [
   { label: "Trending", icon: TrendingUp, path: "/trending" },
   { label: "Bookmarks", icon: Bookmark, path: "/bookmarks" },
   { label: "Lists", icon: List, path: "/lists" },
-  { label: "Settings", icon: Settings, path: "/settings" }, // redirects to profile
 ];
 
 const FeedSidebar = ({ currentUserId, onMessagesClick, profile }: FeedSidebarProps) => {

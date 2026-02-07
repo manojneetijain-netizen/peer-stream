@@ -38,7 +38,6 @@ export function useFeed(currentUserId: string | undefined, tab: FeedTab = "disco
         .select("following_id")
         .eq("follower_id", currentUserId);
       const followingIds = (follows || []).map((f) => f.following_id);
-      // Include own posts too
       followingIds.push(currentUserId);
       if (followingIds.length > 0) {
         query = query.in("user_id", followingIds);
@@ -102,6 +101,32 @@ export function useFeed(currentUserId: string | undefined, tab: FeedTab = "disco
 
   useEffect(() => {
     fetchPosts();
+  }, [fetchPosts]);
+
+  // Real-time subscription for posts, likes, and comments
+  useEffect(() => {
+    const postsChannel = supabase
+      .channel("feed-realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "posts" },
+        () => fetchPosts()
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "likes" },
+        () => fetchPosts()
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "comments" },
+        () => fetchPosts()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(postsChannel);
+    };
   }, [fetchPosts]);
 
   return { posts, loading, refetch: fetchPosts };

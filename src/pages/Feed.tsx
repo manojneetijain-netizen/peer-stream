@@ -3,12 +3,15 @@ import { Navigate, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useFeed } from "@/hooks/useFeed";
 import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
+import { useBlockMute } from "@/hooks/useBlockMute";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 import CreatePost from "@/components/feed/CreatePost";
 import PostCard from "@/components/feed/PostCard";
-import UserSearch from "@/components/feed/UserSearch";
+import PostSearch from "@/components/feed/PostSearch";
 import StoriesBar from "@/components/feed/StoriesBar";
 import NotificationBell from "@/components/feed/NotificationBell";
 import MessagesPage from "@/components/feed/MessagesPage";
+import SuggestedUsers from "@/components/feed/SuggestedUsers";
 import { LogOut, User, Compass, Users, Loader2, MessageCircle, Bookmark, Sun, Moon } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
 
@@ -21,9 +24,16 @@ const Feed = () => {
   const sentinelRef = useInfiniteScroll(loadMore, hasMore && !loadingMore);
   const [showMessages, setShowMessages] = useState(false);
   const { theme, toggleTheme } = useTheme();
+  const { isBlocked, isMuted, blockUser, unblockUser, muteUser, unmuteUser, mutedIds } = useBlockMute(user?.id);
+
+  // Enable push notifications
+  usePushNotifications(user?.id);
 
   if (loading) return null;
   if (!user) return <Navigate to="/auth" replace />;
+
+  // Filter out blocked and muted users
+  const filteredPosts = posts.filter((p) => !isBlocked(p.user_id) && !isMuted(p.user_id));
 
   if (showMessages) {
     return (
@@ -68,8 +78,9 @@ const Feed = () => {
 
       <main className="max-w-2xl mx-auto px-4 py-6 space-y-4">
         <StoriesBar currentUserId={user.id} />
-        <UserSearch />
+        <PostSearch />
         <CreatePost userId={user.id} onCreated={refetch} />
+        <SuggestedUsers currentUserId={user.id} />
 
         {/* Feed tabs */}
         <div className="flex rounded-xl overflow-hidden bg-secondary/50">
@@ -94,7 +105,7 @@ const Feed = () => {
 
         {feedLoading ? (
           <div className="text-center py-12 text-muted-foreground text-sm">Loading feed...</div>
-        ) : posts.length === 0 ? (
+        ) : filteredPosts.length === 0 ? (
           <div className="glass rounded-2xl p-6 text-center">
             <h2 className="text-xl font-semibold text-foreground mb-2">
               {tab === "following" ? "No posts from people you follow" : "Welcome to Pulse 🎉"}
@@ -107,8 +118,19 @@ const Feed = () => {
           </div>
         ) : (
           <>
-            {posts.map((post) => (
-              <PostCard key={post.id} post={post} currentUserId={user.id} onUpdate={refetch} />
+            {filteredPosts.map((post) => (
+              <PostCard
+                key={post.id}
+                post={post}
+                currentUserId={user.id}
+                onUpdate={refetch}
+                isBlocked={isBlocked(post.user_id)}
+                isMuted={isMuted(post.user_id)}
+                onBlock={() => blockUser(post.user_id)}
+                onUnblock={() => unblockUser(post.user_id)}
+                onMute={() => muteUser(post.user_id)}
+                onUnmute={() => unmuteUser(post.user_id)}
+              />
             ))}
             <div ref={sentinelRef} className="h-1" />
             {loadingMore && (
@@ -116,7 +138,7 @@ const Feed = () => {
                 <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
               </div>
             )}
-            {!hasMore && posts.length > 0 && (
+            {!hasMore && filteredPosts.length > 0 && (
               <p className="text-center text-xs text-muted-foreground py-4">You've seen it all ✨</p>
             )}
           </>

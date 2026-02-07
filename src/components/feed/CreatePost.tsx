@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ImagePlus, Send, X } from "lucide-react";
+import { extractHashtags } from "./HashtagRenderer";
 
 interface CreatePostProps {
   userId: string;
@@ -9,41 +10,106 @@ interface CreatePostProps {
 
 const CreatePost = ({ userId, onCreated }: CreatePostProps) => {
   const [content, setContent] = useState("");
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const handleImage = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setImageFile(file);
-    setImagePreview(URL.createObjectURL(file));
+  const handleImages = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    const newFiles = [...imageFiles, ...files].slice(0, 10); // Max 10 images
+    setImageFiles(newFiles);
+    setImagePreviews(newFiles.map((f) => URL.createObjectURL(f)));
   };
 
-  const removeImage = () => {
-    setImageFile(null);
-    setImagePreview(null);
+  const removeImage = (index: number) => {
+    const newFiles = imageFiles.filter((_, i) => i !== index);
+    setImageFiles(newFiles);
+    setImagePreviews(newFiles.map((f) => URL.createObjectURL(f)));
+    if (fileRef.current) fileRef.current.value = "";
+  };
+
+  const removeAllImages = () => {
+    setImageFiles([]);
+    setImagePreviews([]);
     if (fileRef.current) fileRef.current.value = "";
   };
 
   const handleSubmit = async () => {
-    if (!content.trim() && !imageFile) return;
+    if (!content.trim() && imageFiles.length === 0) return;
     setSubmitting(true);
 
-    let image_url: string | null = null;
-    if (imageFile) {
-      const ext = imageFile.name.split(".").pop();
-      const path = `${userId}/${Date.now()}.${ext}`;
-      await supabase.storage.from("post-images").upload(path, imageFile);
+    // Upload images
+    const uploadedUrls: string[] = [];
+    for (const file of imageFiles) {
+      const ext = file.name.split(".").pop();
+      const path = `${userId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      await supabase.storage.from("post-images").upload(path, file);
       const { data: { publicUrl } } = supabase.storage.from("post-images").getPublicUrl(path);
-      image_url = publicUrl;
+      uploadedUrls.push(publicUrl);
     }
 
-    await supabase.from("posts").insert({ user_id: userId, content: content.trim(), image_url });
+    // Create post (first image as main image_url for backward compat)
+    const { data: post } = await supabase
+      .from("posts")
+      .insert({
+        user_id: userId,
+        content: content.trim(),
+        image_url: uploadedUrls[0] || null,
+      })
+      .select("id")
+      .single();
+
+    if (post && uploadedUrls.length > 1) {
+      // Insert additional images into post_images
+      const imageRows = uploadedUrls.map((url, i) => ({
+        post_id: post.id,
+        image_url: url,
+        position: i,
+      }));
+      await supabase.from("post_images").insert(imageRows);
+    } else if (post && uploadedUrls.length === 1) {
+      await supabase.from("post_images").insert([{
+        post_id: post.id,
+        image_url: uploadedUrls[0],
+        position: 0,
+      }]);
+    }
+
+    // Extract and save hashtags
+    if (post) {
+      const tags = extractHashtags(content);
+      for (const tag of tags) {
+        // Upsert hashtag
+        const { data: existing } = await supabase
+          .from("hashtags")
+          .select("id")
+          .eq("name", tag)
+          .single();
+
+        let hashtagId: string;
+        if (existing) {
+          hashtagId = existing.id;
+        } else {
+          const { data: created } = await supabase
+            .from("hashtags")
+            .insert({ name: tag })
+            .select("id")
+            .single();
+          if (!created) continue;
+          hashtagId = created.id;
+        }
+
+        await supabase.from("post_hashtags").insert({
+          post_id: post.id,
+          hashtag_id: hashtagId,
+        });
+      }
+    }
 
     setContent("");
-    removeImage();
+    removeAllImages();
     setSubmitting(false);
     onCreated();
   };
@@ -53,32 +119,41 @@ const CreatePost = ({ userId, onCreated }: CreatePostProps) => {
       <textarea
         value={content}
         onChange={(e) => setContent(e.target.value)}
-        placeholder="What's on your mind?"
+        placeholder="What's on your mind? Use #hashtags!"
         rows={3}
         className="w-full bg-transparent text-foreground placeholder:text-muted-foreground text-sm resize-none focus:outline-none"
       />
-      {imagePreview && (
-        <div className="relative mt-2 rounded-xl overflow-hidden">
-          <img src={imagePreview} alt="Preview" className="w-full max-h-64 object-cover rounded-xl" />
-          <button
-            onClick={removeImage}
-            className="absolute top-2 right-2 p-1 rounded-full bg-background/80 text-foreground hover:bg-background"
-          >
-            <X className="w-4 h-4" />
-          </button>
+      {imagePreviews.length > 0 && (
+        <div className="mt-2 flex gap-2 overflow-x-auto pb-2">
+          {imagePreviews.map((preview, i) => (
+            <div key={i} className="relative shrink-0">
+              <img src={preview} alt={`Preview ${i + 1}`} className="h-24 w-24 object-cover rounded-xl" />
+              <button
+                onClick={() => removeImage(i)}
+                className="absolute -top-1 -right-1 p-0.5 rounded-full bg-background/80 text-foreground hover:bg-background"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          ))}
         </div>
       )}
       <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/30">
-        <button
-          onClick={() => fileRef.current?.click()}
-          className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
-        >
-          <ImagePlus className="w-5 h-5" />
-        </button>
-        <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleImage} />
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => fileRef.current?.click()}
+            className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
+          >
+            <ImagePlus className="w-5 h-5" />
+          </button>
+          {imageFiles.length > 0 && (
+            <span className="text-xs text-muted-foreground">{imageFiles.length}/10 images</span>
+          )}
+        </div>
+        <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={handleImages} />
         <button
           onClick={handleSubmit}
-          disabled={submitting || (!content.trim() && !imageFile)}
+          disabled={submitting || (!content.trim() && imageFiles.length === 0)}
           className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-pulse-blue to-pulse-cyan text-foreground text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
         >
           <Send className="w-4 h-4" />

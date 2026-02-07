@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Send } from "lucide-react";
+import { Send, Trash2 } from "lucide-react";
 
 interface Comment {
   id: string;
@@ -73,12 +73,19 @@ const CommentsSection = ({ postId, currentUserId, onUpdate }: CommentsSectionPro
     onUpdate();
   };
 
+  const deleteComment = async (commentId: string) => {
+    await supabase.from("comments").delete().eq("id", commentId);
+    fetchComments();
+    onUpdate();
+  };
+
   return (
     <div className="mt-3 pt-3 border-t border-border/30 space-y-3">
       {comments.map((c) => {
         const initials = (c.author.display_name || c.author.username || "?").slice(0, 2).toUpperCase();
+        const isOwner = c.user_id === currentUserId;
         return (
-          <div key={c.id} className="flex gap-2">
+          <div key={c.id} className="flex gap-2 group">
             <Link to={`/profile/${c.user_id}`}>
               <Avatar className="w-7 h-7">
                 <AvatarImage src={c.author.avatar_url || undefined} />
@@ -91,6 +98,15 @@ const CommentsSection = ({ postId, currentUserId, onUpdate }: CommentsSectionPro
               </Link>
               <p className="text-sm text-muted-foreground">{c.content}</p>
             </div>
+            {isOwner && (
+              <button
+                onClick={() => deleteComment(c.id)}
+                className="opacity-0 group-hover:opacity-100 p-1 rounded text-muted-foreground hover:text-destructive transition-all"
+                title="Delete comment"
+              >
+                <Trash2 className="w-3 h-3" />
+              </button>
+            )}
           </div>
         );
       })}

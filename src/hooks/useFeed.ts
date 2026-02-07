@@ -17,17 +17,35 @@ export interface PostWithDetails {
   liked_by_me: boolean;
 }
 
-export function useFeed(currentUserId: string | undefined) {
+type FeedTab = "following" | "discover";
+
+export function useFeed(currentUserId: string | undefined, tab: FeedTab = "discover") {
   const [posts, setPosts] = useState<PostWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchPosts = useCallback(async () => {
     setLoading(true);
-    const { data: rawPosts } = await supabase
+
+    let query = supabase
       .from("posts")
       .select("*")
       .order("created_at", { ascending: false })
       .limit(50);
+
+    if (tab === "following" && currentUserId) {
+      const { data: follows } = await supabase
+        .from("follows")
+        .select("following_id")
+        .eq("follower_id", currentUserId);
+      const followingIds = (follows || []).map((f) => f.following_id);
+      // Include own posts too
+      followingIds.push(currentUserId);
+      if (followingIds.length > 0) {
+        query = query.in("user_id", followingIds);
+      }
+    }
+
+    const { data: rawPosts } = await query;
 
     if (!rawPosts || rawPosts.length === 0) {
       setPosts([]);
@@ -80,7 +98,7 @@ export function useFeed(currentUserId: string | undefined) {
 
     setPosts(enriched);
     setLoading(false);
-  }, [currentUserId]);
+  }, [currentUserId, tab]);
 
   useEffect(() => {
     fetchPosts();

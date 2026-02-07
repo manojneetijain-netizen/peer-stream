@@ -9,6 +9,7 @@ import PostCard from "@/components/feed/PostCard";
 import ProfileHeader from "@/components/profile/ProfileHeader";
 import ProfileSettings from "@/components/profile/ProfileSettings";
 import AnimatedPost from "@/components/feed/AnimatedPost";
+import MobileBottomNav from "@/components/feed/MobileBottomNav";
 import { ArrowLeft, Pin, LogOut } from "lucide-react";
 
 const Profile = () => {
@@ -74,7 +75,7 @@ const Profile = () => {
         </div>
       </header>
 
-      <main className="max-w-2xl mx-auto px-4 py-6 space-y-4">
+      <main className="max-w-2xl mx-auto px-4 py-6 pb-20 lg:pb-6 space-y-4">
         <ProfileHeader
           profile={profile}
           stats={stats}
@@ -168,6 +169,7 @@ const Profile = () => {
           </div>
         )}
       </main>
+      <MobileBottomNav />
     </div>
   );
 };

@@ -2,17 +2,19 @@ import { useState } from "react";
 import { Navigate, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useFeed } from "@/hooks/useFeed";
+import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
 import CreatePost from "@/components/feed/CreatePost";
 import PostCard from "@/components/feed/PostCard";
 import UserSearch from "@/components/feed/UserSearch";
-import { LogOut, User, Compass, Users } from "lucide-react";
+import { LogOut, User, Compass, Users, Loader2 } from "lucide-react";
 
 type FeedTab = "following" | "discover";
 
 const Feed = () => {
   const { user, loading, signOut } = useAuth();
   const [tab, setTab] = useState<FeedTab>("discover");
-  const { posts, loading: feedLoading, refetch } = useFeed(user?.id, tab);
+  const { posts, loading: feedLoading, loadingMore, hasMore, loadMore, refetch } = useFeed(user?.id, tab);
+  const sentinelRef = useInfiniteScroll(loadMore, hasMore && !loadingMore);
 
   if (loading) return null;
   if (!user) return <Navigate to="/auth" replace />;
@@ -72,9 +74,20 @@ const Feed = () => {
             </p>
           </div>
         ) : (
-          posts.map((post) => (
-            <PostCard key={post.id} post={post} currentUserId={user.id} onUpdate={refetch} />
-          ))
+          <>
+            {posts.map((post) => (
+              <PostCard key={post.id} post={post} currentUserId={user.id} onUpdate={refetch} />
+            ))}
+            <div ref={sentinelRef} className="h-1" />
+            {loadingMore && (
+              <div className="flex justify-center py-4">
+                <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+              </div>
+            )}
+            {!hasMore && posts.length > 0 && (
+              <p className="text-center text-xs text-muted-foreground py-4">You've seen it all ✨</p>
+            )}
+          </>
         )}
       </main>
     </div>

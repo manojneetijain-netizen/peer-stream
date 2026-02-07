@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Heart, MessageCircle, Trash2 } from "lucide-react";
+import { Heart, MessageCircle, Trash2, Repeat2 } from "lucide-react";
 import type { PostWithDetails } from "@/hooks/useFeed";
 import CommentsSection from "./CommentsSection";
 
@@ -15,6 +15,8 @@ interface PostCardProps {
 const PostCard = ({ post, currentUserId, onUpdate }: PostCardProps) => {
   const [liked, setLiked] = useState(post.liked_by_me);
   const [likesCount, setLikesCount] = useState(post.likes_count);
+  const [reposted, setReposted] = useState(post.reposted_by_me);
+  const [repostsCount, setRepostsCount] = useState(post.reposts_count);
   const [showComments, setShowComments] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -29,6 +31,18 @@ const PostCard = ({ post, currentUserId, onUpdate }: PostCardProps) => {
       await supabase.from("likes").insert({ user_id: currentUserId, post_id: post.id });
       setLiked(true);
       setLikesCount((c) => c + 1);
+    }
+  };
+
+  const toggleRepost = async () => {
+    if (reposted) {
+      await supabase.from("reposts").delete().eq("user_id", currentUserId).eq("post_id", post.id);
+      setReposted(false);
+      setRepostsCount((c) => c - 1);
+    } else {
+      await supabase.from("reposts").insert({ user_id: currentUserId, post_id: post.id });
+      setReposted(true);
+      setRepostsCount((c) => c + 1);
     }
   };
 
@@ -104,6 +118,10 @@ const PostCard = ({ post, currentUserId, onUpdate }: PostCardProps) => {
         <button onClick={() => setShowComments(!showComments)} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
           <MessageCircle className="w-4 h-4" />
           <span>{post.comments_count}</span>
+        </button>
+        <button onClick={toggleRepost} className="flex items-center gap-1.5 text-sm transition-colors group">
+          <Repeat2 className={`w-4 h-4 transition-colors ${reposted ? "text-green-500" : "text-muted-foreground group-hover:text-foreground"}`} />
+          <span className={reposted ? "text-green-500" : "text-muted-foreground group-hover:text-foreground"}>{repostsCount}</span>
         </button>
       </div>
 

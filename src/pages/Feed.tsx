@@ -17,6 +17,7 @@ import FeedSidebar from "@/components/feed/FeedSidebar";
 import RightSidebar from "@/components/feed/RightSidebar";
 import AnimatedPost from "@/components/feed/AnimatedPost";
 import MobileBottomNav from "@/components/feed/MobileBottomNav";
+import PullToRefresh from "@/components/feed/PullToRefresh";
 import { Compass, Users, Loader2 } from "lucide-react";
 
 type FeedTab = "following" | "discover";
@@ -78,6 +79,7 @@ const Feed = () => {
 
       {/* Center Feed */}
       <main className="flex-1 min-w-0 border-x border-border/10">
+        <PullToRefresh onRefresh={refetch}>
         <div className="max-w-2xl mx-auto px-4 py-6 lg:py-4 space-y-4 lg:mt-0 mt-14 pb-20 lg:pb-4">
           {/* Header with notification bell (desktop) */}
           <div className="hidden lg:flex items-center justify-between mb-2">
@@ -191,6 +193,7 @@ const Feed = () => {
             </>
           )}
         </div>
+        </PullToRefresh>
       </main>
 
       {/* Right Sidebar */}

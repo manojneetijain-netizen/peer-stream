@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Heart, MessageCircle, Trash2, Repeat2, Bookmark, Pencil } from "lucide-react";
+import { Heart, MessageCircle, Trash2, Repeat2, Bookmark, Pencil, Quote } from "lucide-react";
 import type { PostWithDetails } from "@/hooks/useFeed";
 import CommentsSection from "./CommentsSection";
 import ReactionsPicker from "./ReactionsPicker";
@@ -10,6 +10,9 @@ import EditPostModal from "./EditPostModal";
 import ImageCarousel from "./ImageCarousel";
 import HashtagRenderer from "./HashtagRenderer";
 import BlockMuteMenu from "./BlockMuteMenu";
+import PollDisplay from "./PollDisplay";
+import QuotedPostCard from "./QuotedPostCard";
+import QuoteRepostModal from "./QuoteRepostModal";
 
 interface PostCardProps {
   post: PostWithDetails;
@@ -31,11 +34,17 @@ const PostCard = ({ post, currentUserId, onUpdate, isBlocked, isMuted, onBlock, 
   const [bookmarked, setBookmarked] = useState(post.bookmarked_by_me);
   const [showComments, setShowComments] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
+  const [showQuote, setShowQuote] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [images, setImages] = useState<string[]>([]);
 
   const isOwner = post.user_id === currentUserId;
   const showBlockMute = !isOwner && onBlock && onUnblock && onMute && onUnmute;
+
+  // Track view
+  useEffect(() => {
+    supabase.from("post_views").insert({ post_id: post.id, viewer_id: currentUserId });
+  }, [post.id, currentUserId]);
 
   // Fetch multi-images
   useEffect(() => {
@@ -99,6 +108,14 @@ const PostCard = ({ post, currentUserId, onUpdate, isBlocked, isMuted, onBlock, 
     await supabase.from("bookmarks").delete().eq("post_id", post.id);
     await supabase.from("post_hashtags").delete().eq("post_id", post.id);
     await supabase.from("post_images").delete().eq("post_id", post.id);
+    await supabase.from("post_views").delete().eq("post_id", post.id);
+    // Delete poll data
+    const { data: pollData } = await supabase.from("polls").select("id").eq("post_id", post.id).maybeSingle();
+    if (pollData) {
+      await supabase.from("poll_votes").delete().eq("poll_id", pollData.id);
+      await supabase.from("poll_options").delete().eq("poll_id", pollData.id);
+      await supabase.from("polls").delete().eq("post_id", post.id);
+    }
     await supabase.from("posts").delete().eq("id", post.id);
     onUpdate();
   };
@@ -136,32 +153,16 @@ const PostCard = ({ post, currentUserId, onUpdate, isBlocked, isMuted, onBlock, 
         <span className="text-xs text-muted-foreground">{timeAgo(post.created_at)}</span>
         {isOwner && (
           <div className="flex items-center gap-0.5">
-            <button
-              onClick={() => setShowEdit(true)}
-              className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
-              title="Edit post"
-            >
+            <button onClick={() => setShowEdit(true)} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors" title="Edit post">
               <Pencil className="w-3.5 h-3.5" />
             </button>
-            <button
-              onClick={deletePost}
-              className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-              title="Delete post"
-            >
+            <button onClick={deletePost} className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors" title="Delete post">
               <Trash2 className="w-3.5 h-3.5" />
             </button>
           </div>
         )}
         {showBlockMute && (
-          <BlockMuteMenu
-            userId={post.user_id}
-            isBlocked={isBlocked || false}
-            isMuted={isMuted || false}
-            onBlock={onBlock!}
-            onUnblock={onUnblock!}
-            onMute={onMute!}
-            onUnmute={onUnmute!}
-          />
+          <BlockMuteMenu userId={post.user_id} isBlocked={isBlocked || false} isMuted={isMuted || false} onBlock={onBlock!} onUnblock={onUnblock!} onMute={onMute!} onUnmute={onUnmute!} />
         )}
       </div>
 
@@ -170,6 +171,12 @@ const PostCard = ({ post, currentUserId, onUpdate, isBlocked, isMuted, onBlock, 
 
       {/* Image carousel */}
       {images.length > 0 && <ImageCarousel images={images} />}
+
+      {/* Poll */}
+      <PollDisplay postId={post.id} currentUserId={currentUserId} />
+
+      {/* Quoted post */}
+      {(post as any).quoted_post_id && <QuotedPostCard quotedPostId={(post as any).quoted_post_id} />}
 
       {/* Actions */}
       <div className="flex items-center gap-4 mt-4 pt-3 border-t border-border/30">
@@ -185,30 +192,18 @@ const PostCard = ({ post, currentUserId, onUpdate, isBlocked, isMuted, onBlock, 
           <Repeat2 className={`w-4 h-4 transition-colors ${reposted ? "text-accent" : "text-muted-foreground group-hover:text-foreground"}`} />
           <span className={reposted ? "text-accent" : "text-muted-foreground group-hover:text-foreground"}>{repostsCount}</span>
         </button>
-        <ReactionsPicker
-          postId={post.id}
-          currentUserId={currentUserId}
-          myReaction={post.my_reaction}
-          reactionCounts={post.reaction_counts}
-          onUpdate={onUpdate}
-        />
+        <button onClick={() => setShowQuote(true)} className="text-muted-foreground hover:text-foreground transition-colors" title="Quote repost">
+          <Quote className="w-4 h-4" />
+        </button>
+        <ReactionsPicker postId={post.id} currentUserId={currentUserId} myReaction={post.my_reaction} reactionCounts={post.reaction_counts} onUpdate={onUpdate} />
         <button onClick={toggleBookmark} className="ml-auto text-muted-foreground hover:text-foreground transition-colors">
           <Bookmark className={`w-4 h-4 ${bookmarked ? "fill-foreground text-foreground" : ""}`} />
         </button>
       </div>
 
-      {showComments && (
-        <CommentsSection postId={post.id} currentUserId={currentUserId} onUpdate={onUpdate} />
-      )}
-
-      {showEdit && (
-        <EditPostModal
-          postId={post.id}
-          initialContent={post.content}
-          onClose={() => setShowEdit(false)}
-          onSaved={onUpdate}
-        />
-      )}
+      {showComments && <CommentsSection postId={post.id} currentUserId={currentUserId} onUpdate={onUpdate} />}
+      {showEdit && <EditPostModal postId={post.id} initialContent={post.content} onClose={() => setShowEdit(false)} onSaved={onUpdate} />}
+      {showQuote && <QuoteRepostModal post={post} currentUserId={currentUserId} onClose={() => setShowQuote(false)} onCreated={onUpdate} />}
     </div>
   );
 };

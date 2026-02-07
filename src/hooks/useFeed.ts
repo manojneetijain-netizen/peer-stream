@@ -7,6 +7,7 @@ export interface PostWithDetails {
   image_url: string | null;
   created_at: string;
   user_id: string;
+  quoted_post_id: string | null;
   author: {
     username: string | null;
     display_name: string | null;

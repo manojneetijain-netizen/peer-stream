@@ -5,8 +5,8 @@ interface HashtagRendererProps {
 }
 
 const HashtagRenderer = ({ content }: HashtagRendererProps) => {
-  // Split content by hashtags, preserving the hashtags
-  const parts = content.split(/(#\w+)/g);
+  // Split by hashtags and @mentions
+  const parts = content.split(/(#\w+|@\w+)/g);
 
   return (
     <p className="mt-3 text-sm text-foreground whitespace-pre-wrap">
@@ -23,6 +23,20 @@ const HashtagRenderer = ({ content }: HashtagRendererProps) => {
             </Link>
           );
         }
+        if (part.startsWith("@")) {
+          const username = part.slice(1);
+          return (
+            <span
+              key={i}
+              className="text-accent hover:underline font-medium cursor-pointer"
+              onClick={() => {
+                // Navigate to user search - for now link style
+              }}
+            >
+              {part}
+            </span>
+          );
+        }
         return part;
       })}
     </p>
@@ -34,6 +48,13 @@ export default HashtagRenderer;
 // Utility to extract hashtags from content
 export function extractHashtags(content: string): string[] {
   const matches = content.match(/#(\w+)/g);
+  if (!matches) return [];
+  return [...new Set(matches.map((m) => m.slice(1).toLowerCase()))];
+}
+
+// Utility to extract mentions from content
+export function extractMentions(content: string): string[] {
+  const matches = content.match(/@(\w+)/g);
   if (!matches) return [];
   return [...new Set(matches.map((m) => m.slice(1).toLowerCase()))];
 }

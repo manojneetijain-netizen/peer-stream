@@ -1,10 +1,12 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useParams, Navigate, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile, useProfileStats, useIsFollowing } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
+import { useFeed, PostWithDetails } from "@/hooks/useFeed";
+import PostCard from "@/components/feed/PostCard";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { ArrowLeft, Camera, Check, X, ImagePlus, BarChart3 } from "lucide-react";
+import { ArrowLeft, Camera, Check, X, ImagePlus, BarChart3, BadgeCheck, Pin } from "lucide-react";
 
 const Profile = () => {
   const { userId } = useParams<{ userId: string }>();
@@ -15,17 +17,31 @@ const Profile = () => {
   const { profile, loading, refetch } = useProfile(targetId);
   const stats = useProfileStats(targetId);
   const { isFollowing, toggle: toggleFollow, loading: followLoading } = useIsFollowing(user?.id, targetId);
+  const { posts, refetch: refetchPosts } = useFeed(user?.id, "discover");
 
   const [editing, setEditing] = useState(false);
   const [displayName, setDisplayName] = useState("");
   const [bio, setBio] = useState("");
   const [uploading, setUploading] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
+  const [pinnedPostId, setPinnedPostId] = useState<string | null>(null);
+  const [isVerified, setIsVerified] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const coverRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    if (profile) {
+      setPinnedPostId((profile as any).pinned_post_id || null);
+      setIsVerified((profile as any).is_verified || false);
+    }
+  }, [profile]);
+
   if (authLoading || loading) return null;
   if (!user) return <Navigate to="/auth" replace />;
+
+  const userPosts = posts.filter((p) => p.user_id === targetId);
+  const pinnedPost = pinnedPostId ? userPosts.find((p) => p.id === pinnedPostId) : null;
+  const otherPosts = userPosts.filter((p) => p.id !== pinnedPostId);
 
   const startEdit = () => {
     setDisplayName(profile?.display_name || "");
@@ -66,6 +82,16 @@ const Profile = () => {
     refetch();
   };
 
+  const pinPost = async (postId: string) => {
+    await supabase.from("profiles").update({ pinned_post_id: postId } as any).eq("user_id", user.id);
+    setPinnedPostId(postId);
+  };
+
+  const unpinPost = async () => {
+    await supabase.from("profiles").update({ pinned_post_id: null } as any).eq("user_id", user.id);
+    setPinnedPostId(null);
+  };
+
   const initials = (profile?.display_name || profile?.username || "?").slice(0, 2).toUpperCase();
 
   return (
@@ -79,7 +105,7 @@ const Profile = () => {
         </div>
       </header>
 
-      <main className="max-w-2xl mx-auto px-4 py-8">
+      <main className="max-w-2xl mx-auto px-4 py-8 space-y-4">
         <div className="glass rounded-2xl overflow-hidden">
           {/* Cover image */}
           <div className="relative h-36 bg-gradient-to-r from-pulse-blue/20 to-pulse-cyan/20">
@@ -88,11 +114,7 @@ const Profile = () => {
             )}
             {isOwnProfile && (
               <>
-                <button
-                  onClick={() => coverRef.current?.click()}
-                  disabled={uploadingCover}
-                  className="absolute top-2 right-2 p-2 rounded-full bg-background/60 text-foreground hover:bg-background/80 transition-colors"
-                >
+                <button onClick={() => coverRef.current?.click()} disabled={uploadingCover} className="absolute top-2 right-2 p-2 rounded-full bg-background/60 text-foreground hover:bg-background/80 transition-colors">
                   <ImagePlus className="w-4 h-4" />
                 </button>
                 <input ref={coverRef} type="file" accept="image/*" className="hidden" onChange={uploadCover} />
@@ -101,7 +123,6 @@ const Profile = () => {
           </div>
 
           <div className="p-6 -mt-12">
-            {/* Avatar */}
             <div className="flex flex-col items-center">
               <div className="relative">
                 <Avatar className="w-24 h-24 border-4 border-background">
@@ -110,11 +131,7 @@ const Profile = () => {
                 </Avatar>
                 {isOwnProfile && (
                   <>
-                    <button
-                      onClick={() => fileRef.current?.click()}
-                      disabled={uploading}
-                      className="absolute bottom-0 right-0 p-1.5 rounded-full bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
-                    >
+                    <button onClick={() => fileRef.current?.click()} disabled={uploading} className="absolute bottom-0 right-0 p-1.5 rounded-full bg-primary text-primary-foreground hover:opacity-90 transition-opacity">
                       <Camera className="w-3.5 h-3.5" />
                     </button>
                     <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={uploadAvatar} />
@@ -124,19 +141,8 @@ const Profile = () => {
 
               {editing ? (
                 <div className="mt-4 w-full max-w-xs space-y-3">
-                  <input
-                    value={displayName}
-                    onChange={(e) => setDisplayName(e.target.value)}
-                    placeholder="Display name"
-                    className="w-full px-3 py-2 rounded-lg bg-secondary/50 border border-border text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-                  />
-                  <textarea
-                    value={bio}
-                    onChange={(e) => setBio(e.target.value)}
-                    placeholder="Bio"
-                    rows={3}
-                    className="w-full px-3 py-2 rounded-lg bg-secondary/50 border border-border text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-primary resize-none"
-                  />
+                  <input value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="Display name" className="w-full px-3 py-2 rounded-lg bg-secondary/50 border border-border text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-primary" />
+                  <textarea value={bio} onChange={(e) => setBio(e.target.value)} placeholder="Bio" rows={3} className="w-full px-3 py-2 rounded-lg bg-secondary/50 border border-border text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-primary resize-none" />
                   <div className="flex gap-2 justify-center">
                     <button onClick={saveProfile} className="p-2 rounded-lg bg-primary text-primary-foreground hover:opacity-90"><Check className="w-4 h-4" /></button>
                     <button onClick={() => setEditing(false)} className="p-2 rounded-lg bg-secondary text-foreground hover:bg-secondary/80"><X className="w-4 h-4" /></button>
@@ -144,14 +150,16 @@ const Profile = () => {
                 </div>
               ) : (
                 <>
-                  <h2 className="mt-4 text-xl font-semibold text-foreground">{profile?.display_name || profile?.username || "Anonymous"}</h2>
+                  <div className="flex items-center gap-1 mt-4">
+                    <h2 className="text-xl font-semibold text-foreground">{profile?.display_name || profile?.username || "Anonymous"}</h2>
+                    {isVerified && <BadgeCheck className="w-5 h-5 text-primary" />}
+                  </div>
                   {profile?.username && <p className="text-sm text-muted-foreground">@{profile.username}</p>}
                   {profile?.bio && <p className="mt-2 text-sm text-muted-foreground text-center max-w-xs">{profile.bio}</p>}
                 </>
               )}
             </div>
 
-            {/* Stats - clickable */}
             <div className="flex justify-center gap-8 mt-6 pt-6 border-t border-border/30">
               <div className="text-center">
                 <p className="text-lg font-bold text-foreground">{stats.posts}</p>
@@ -167,7 +175,6 @@ const Profile = () => {
               </Link>
             </div>
 
-            {/* Actions */}
             <div className="flex justify-center mt-6 gap-3">
               {isOwnProfile ? (
                 <>
@@ -176,30 +183,48 @@ const Profile = () => {
                       Edit Profile
                     </button>
                   )}
-                  <Link
-                    to="/analytics"
-                    className="flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium text-foreground bg-secondary/50 hover:bg-secondary/80 transition-colors"
-                  >
+                  <Link to="/analytics" className="flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium text-foreground bg-secondary/50 hover:bg-secondary/80 transition-colors">
                     <BarChart3 className="w-4 h-4" />
                     Analytics
                   </Link>
                 </>
               ) : (
-                <button
-                  onClick={toggleFollow}
-                  disabled={followLoading}
-                  className={`rounded-full px-6 py-2 text-sm font-medium transition-colors ${
-                    isFollowing
-                      ? "bg-secondary text-foreground hover:bg-secondary/80"
-                      : "bg-gradient-to-r from-pulse-blue to-pulse-cyan text-foreground hover:opacity-90"
-                  }`}
-                >
+                <button onClick={toggleFollow} disabled={followLoading} className={`rounded-full px-6 py-2 text-sm font-medium transition-colors ${isFollowing ? "bg-secondary text-foreground hover:bg-secondary/80" : "bg-gradient-to-r from-pulse-blue to-pulse-cyan text-foreground hover:opacity-90"}`}>
                   {isFollowing ? "Unfollow" : "Follow"}
                 </button>
               )}
             </div>
           </div>
         </div>
+
+        {/* Pinned post */}
+        {pinnedPost && (
+          <PostCard
+            post={pinnedPost}
+            currentUserId={user.id}
+            onUpdate={refetchPosts}
+            isPinned
+            onPin={() => {}}
+            onUnpin={isOwnProfile ? unpinPost : undefined}
+          />
+        )}
+
+        {/* User posts */}
+        {otherPosts.length > 0 && (
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold text-muted-foreground px-1">Posts</h3>
+            {otherPosts.map((p) => (
+              <PostCard
+                key={p.id}
+                post={p}
+                currentUserId={user.id}
+                onUpdate={refetchPosts}
+                onPin={isOwnProfile ? () => pinPost(p.id) : undefined}
+                onUnpin={undefined}
+              />
+            ))}
+          </div>
+        )}
       </main>
     </div>
   );

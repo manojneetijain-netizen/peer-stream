@@ -12,7 +12,7 @@ import StoriesBar from "@/components/feed/StoriesBar";
 import NotificationBell from "@/components/feed/NotificationBell";
 import MessagesPage from "@/components/feed/MessagesPage";
 import SuggestedUsers from "@/components/feed/SuggestedUsers";
-import { LogOut, User, Compass, Users, Loader2, MessageCircle, Bookmark, Sun, Moon } from "lucide-react";
+import { LogOut, User, Compass, Users, Loader2, MessageCircle, Bookmark, Sun, Moon, Settings } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
 
 type FeedTab = "following" | "discover";
@@ -68,6 +68,9 @@ const Feed = () => {
             </Link>
             <Link to={`/profile/${user.id}`} className="p-2 rounded-lg hover:bg-secondary/50 transition-colors text-muted-foreground hover:text-foreground">
               <User className="w-4 h-4" />
+            </Link>
+            <Link to="/settings/notifications" className="p-2 rounded-lg hover:bg-secondary/50 transition-colors text-muted-foreground hover:text-foreground">
+              <Settings className="w-4 h-4" />
             </Link>
             <button onClick={signOut} className="p-2 rounded-lg hover:bg-secondary/50 transition-colors text-muted-foreground hover:text-foreground">
               <LogOut className="w-4 h-4" />

@@ -35,26 +35,58 @@ export type Database = {
         }
         Relationships: []
       }
+      bookmark_folders: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       bookmarks: {
         Row: {
           created_at: string
+          folder_id: string | null
           id: string
           post_id: string
           user_id: string
         }
         Insert: {
           created_at?: string
+          folder_id?: string | null
           id?: string
           post_id: string
           user_id: string
         }
         Update: {
           created_at?: string
+          folder_id?: string | null
           id?: string
           post_id?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "bookmarks_folder_id_fkey"
+            columns: ["folder_id"]
+            isOneToOne: false
+            referencedRelation: "bookmark_folders"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       comments: {
         Row: {
@@ -97,6 +129,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      drafts: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          image_urls: Json | null
+          poll_data: Json | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content?: string
+          created_at?: string
+          id?: string
+          image_urls?: Json | null
+          poll_data?: Json | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          image_urls?: Json | null
+          poll_data?: Json | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       follower_snapshots: {
         Row: {
@@ -235,6 +297,39 @@ export type Database = {
           id?: string
           muted_id?: string
           muter_id?: string
+        }
+        Relationships: []
+      }
+      notification_preferences: {
+        Row: {
+          comments: boolean
+          created_at: string
+          follows: boolean
+          id: string
+          likes: boolean
+          messages: boolean
+          reposts: boolean
+          user_id: string
+        }
+        Insert: {
+          comments?: boolean
+          created_at?: string
+          follows?: boolean
+          id?: string
+          likes?: boolean
+          messages?: boolean
+          reposts?: boolean
+          user_id: string
+        }
+        Update: {
+          comments?: boolean
+          created_at?: string
+          follows?: boolean
+          id?: string
+          likes?: boolean
+          messages?: boolean
+          reposts?: boolean
+          user_id?: string
         }
         Relationships: []
       }
@@ -472,6 +567,7 @@ export type Database = {
           id: string
           image_url: string | null
           quoted_post_id: string | null
+          scheduled_at: string | null
           user_id: string
         }
         Insert: {
@@ -480,6 +576,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           quoted_post_id?: string | null
+          scheduled_at?: string | null
           user_id: string
         }
         Update: {
@@ -488,6 +585,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           quoted_post_id?: string | null
+          scheduled_at?: string | null
           user_id?: string
         }
         Relationships: [
@@ -508,6 +606,8 @@ export type Database = {
           created_at: string
           display_name: string | null
           id: string
+          is_verified: boolean
+          pinned_post_id: string | null
           updated_at: string
           user_id: string
           username: string | null
@@ -519,6 +619,8 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          is_verified?: boolean
+          pinned_post_id?: string | null
           updated_at?: string
           user_id: string
           username?: string | null
@@ -530,6 +632,8 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          is_verified?: boolean
+          pinned_post_id?: string | null
           updated_at?: string
           user_id?: string
           username?: string | null
@@ -559,6 +663,38 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      reports: {
+        Row: {
+          created_at: string
+          id: string
+          post_id: string
+          reason: string
+          reporter_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          post_id: string
+          reason: string
+          reporter_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          post_id?: string
+          reason?: string
+          reporter_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reports_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       reposts: {
         Row: {

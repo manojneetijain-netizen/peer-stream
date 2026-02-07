@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { AuthProvider } from "@/hooks/useAuth";
 import PageTransition from "@/components/layout/PageTransition";
@@ -18,7 +18,7 @@ import Analytics from "./pages/Analytics";
 import NotificationSettings from "./pages/NotificationSettings";
 import UserLists from "./pages/UserLists";
 import ExplorePage from "./pages/ExplorePage";
-import Settings from "./pages/Settings";
+// Settings is now integrated into Profile page
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,6 +32,7 @@ const AnimatedRoutes = () => {
         <Route path="/" element={<Index />} />
         <Route path="/auth" element={<PageTransition><Auth /></PageTransition>} />
         <Route path="/feed" element={<Feed />} />
+        <Route path="/profile" element={<PageTransition><Profile /></PageTransition>} />
         <Route path="/profile/:userId" element={<PageTransition><Profile /></PageTransition>} />
         <Route path="/profile/:userId/followers" element={<PageTransition><FollowList /></PageTransition>} />
         <Route path="/profile/:userId/following" element={<PageTransition><FollowList /></PageTransition>} />
@@ -40,7 +41,7 @@ const AnimatedRoutes = () => {
         <Route path="/trending" element={<PageTransition><TrendingPage /></PageTransition>} />
         <Route path="/analytics" element={<PageTransition><Analytics /></PageTransition>} />
         <Route path="/settings/notifications" element={<PageTransition><NotificationSettings /></PageTransition>} />
-        <Route path="/settings" element={<PageTransition><Settings /></PageTransition>} />
+        <Route path="/settings" element={<Navigate to="/profile" replace />} />
         <Route path="/lists" element={<PageTransition><UserLists /></PageTransition>} />
         <Route path="/explore" element={<PageTransition><ExplorePage /></PageTransition>} />
         <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />

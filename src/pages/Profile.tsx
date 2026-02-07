@@ -1,16 +1,19 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useParams, Navigate, Link } from "react-router-dom";
+import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile, useProfileStats, useIsFollowing } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
-import { useFeed, PostWithDetails } from "@/hooks/useFeed";
+import { useFeed } from "@/hooks/useFeed";
 import PostCard from "@/components/feed/PostCard";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { ArrowLeft, Camera, Check, X, ImagePlus, BarChart3, BadgeCheck, Pin } from "lucide-react";
+import ProfileHeader from "@/components/profile/ProfileHeader";
+import ProfileSettings from "@/components/profile/ProfileSettings";
+import AnimatedPost from "@/components/feed/AnimatedPost";
+import { ArrowLeft, Pin, LogOut } from "lucide-react";
 
 const Profile = () => {
   const { userId } = useParams<{ userId: string }>();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, signOut } = useAuth();
   const targetId = userId || user?.id;
   const isOwnProfile = targetId === user?.id;
 
@@ -19,20 +22,14 @@ const Profile = () => {
   const { isFollowing, toggle: toggleFollow, loading: followLoading } = useIsFollowing(user?.id, targetId);
   const { posts, refetch: refetchPosts } = useFeed(user?.id, "discover");
 
-  const [editing, setEditing] = useState(false);
-  const [displayName, setDisplayName] = useState("");
-  const [bio, setBio] = useState("");
-  const [uploading, setUploading] = useState(false);
-  const [uploadingCover, setUploadingCover] = useState(false);
   const [pinnedPostId, setPinnedPostId] = useState<string | null>(null);
-  const [isVerified, setIsVerified] = useState(false);
-  const fileRef = useRef<HTMLInputElement>(null);
-  const coverRef = useRef<HTMLInputElement>(null);
+  const [activeSection, setActiveSection] = useState<"posts" | "settings">(
+    isOwnProfile ? "posts" : "posts"
+  );
 
   useEffect(() => {
     if (profile) {
-      setPinnedPostId((profile as any).pinned_post_id || null);
-      setIsVerified((profile as any).is_verified || false);
+      setPinnedPostId(profile.pinned_post_id || null);
     }
   }, [profile]);
 
@@ -43,186 +40,131 @@ const Profile = () => {
   const pinnedPost = pinnedPostId ? userPosts.find((p) => p.id === pinnedPostId) : null;
   const otherPosts = userPosts.filter((p) => p.id !== pinnedPostId);
 
-  const startEdit = () => {
-    setDisplayName(profile?.display_name || "");
-    setBio(profile?.bio || "");
-    setEditing(true);
-  };
-
-  const saveProfile = async () => {
-    if (!user) return;
-    await supabase.from("profiles").update({ display_name: displayName, bio }).eq("user_id", user.id);
-    setEditing(false);
-    refetch();
-  };
-
-  const uploadAvatar = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !user) return;
-    setUploading(true);
-    const ext = file.name.split(".").pop();
-    const path = `${user.id}/avatar.${ext}`;
-    await supabase.storage.from("avatars").upload(path, file, { upsert: true });
-    const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(path);
-    await supabase.from("profiles").update({ avatar_url: publicUrl }).eq("user_id", user.id);
-    setUploading(false);
-    refetch();
-  };
-
-  const uploadCover = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !user) return;
-    setUploadingCover(true);
-    const ext = file.name.split(".").pop();
-    const path = `${user.id}/cover.${ext}`;
-    await supabase.storage.from("avatars").upload(path, file, { upsert: true });
-    const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(path);
-    await supabase.from("profiles").update({ cover_url: publicUrl }).eq("user_id", user.id);
-    setUploadingCover(false);
-    refetch();
-  };
-
   const pinPost = async (postId: string) => {
-    await supabase.from("profiles").update({ pinned_post_id: postId } as any).eq("user_id", user.id);
+    await supabase.from("profiles").update({ pinned_post_id: postId }).eq("user_id", user.id);
     setPinnedPostId(postId);
   };
 
   const unpinPost = async () => {
-    await supabase.from("profiles").update({ pinned_post_id: null } as any).eq("user_id", user.id);
+    await supabase.from("profiles").update({ pinned_post_id: null }).eq("user_id", user.id);
     setPinnedPostId(null);
   };
-
-  const initials = (profile?.display_name || profile?.username || "?").slice(0, 2).toUpperCase();
 
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-50 glass border-b border-border/30">
-        <div className="max-w-2xl mx-auto px-4 h-14 flex items-center gap-3">
-          <Link to="/feed" className="p-2 rounded-lg hover:bg-secondary/50 text-muted-foreground hover:text-foreground transition-colors">
-            <ArrowLeft className="w-4 h-4" />
-          </Link>
-          <span className="text-lg font-bold gradient-text">Profile</span>
+        <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Link to="/feed" className="p-2 rounded-lg hover:bg-secondary/50 text-muted-foreground hover:text-foreground transition-colors">
+              <ArrowLeft className="w-4 h-4" />
+            </Link>
+            <span className="text-lg font-bold gradient-text">
+              {profile?.display_name || profile?.username || "Profile"}
+            </span>
+          </div>
+          {isOwnProfile && (
+            <button
+              onClick={signOut}
+              className="p-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
+              title="Sign out"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          )}
         </div>
       </header>
 
-      <main className="max-w-2xl mx-auto px-4 py-8 space-y-4">
-        <div className="glass rounded-2xl overflow-hidden">
-          {/* Cover image */}
-          <div className="relative h-36 bg-gradient-to-r from-pulse-blue/20 to-pulse-cyan/20">
-            {(profile as any)?.cover_url && (
-              <img src={(profile as any).cover_url} alt="Cover" className="w-full h-full object-cover" />
-            )}
-            {isOwnProfile && (
-              <>
-                <button onClick={() => coverRef.current?.click()} disabled={uploadingCover} className="absolute top-2 right-2 p-2 rounded-full bg-background/60 text-foreground hover:bg-background/80 transition-colors">
-                  <ImagePlus className="w-4 h-4" />
-                </button>
-                <input ref={coverRef} type="file" accept="image/*" className="hidden" onChange={uploadCover} />
-              </>
-            )}
-          </div>
+      <main className="max-w-2xl mx-auto px-4 py-6 space-y-4">
+        <ProfileHeader
+          profile={profile}
+          stats={stats}
+          isOwnProfile={isOwnProfile}
+          isFollowing={isFollowing}
+          followLoading={followLoading}
+          toggleFollow={toggleFollow}
+          currentUserId={user.id}
+          targetId={targetId!}
+          refetch={refetch}
+        />
 
-          <div className="p-6 -mt-12">
-            <div className="flex flex-col items-center">
-              <div className="relative">
-                <Avatar className="w-24 h-24 border-4 border-background">
-                  <AvatarImage src={profile?.avatar_url || undefined} />
-                  <AvatarFallback className="text-xl bg-secondary text-foreground">{initials}</AvatarFallback>
-                </Avatar>
-                {isOwnProfile && (
-                  <>
-                    <button onClick={() => fileRef.current?.click()} disabled={uploading} className="absolute bottom-0 right-0 p-1.5 rounded-full bg-primary text-primary-foreground hover:opacity-90 transition-opacity">
-                      <Camera className="w-3.5 h-3.5" />
-                    </button>
-                    <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={uploadAvatar} />
-                  </>
+        {/* Section toggle for own profile */}
+        {isOwnProfile && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="flex rounded-xl overflow-hidden glass"
+          >
+            {([
+              { key: "posts" as const, label: "Posts" },
+              { key: "settings" as const, label: "Settings" },
+            ]).map(({ key, label }) => (
+              <button
+                key={key}
+                onClick={() => setActiveSection(key)}
+                className={`flex-1 py-2.5 text-sm font-medium transition-all duration-300 relative ${
+                  activeSection === key ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {label}
+                {activeSection === key && (
+                  <motion.div
+                    layoutId="profileSection"
+                    className="absolute inset-0 bg-primary/10 rounded-xl"
+                    transition={{ type: "spring", bounce: 0.2, duration: 0.5 }}
+                  />
                 )}
-              </div>
+              </button>
+            ))}
+          </motion.div>
+        )}
 
-              {editing ? (
-                <div className="mt-4 w-full max-w-xs space-y-3">
-                  <input value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="Display name" className="w-full px-3 py-2 rounded-lg bg-secondary/50 border border-border text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-primary" />
-                  <textarea value={bio} onChange={(e) => setBio(e.target.value)} placeholder="Bio" rows={3} className="w-full px-3 py-2 rounded-lg bg-secondary/50 border border-border text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-primary resize-none" />
-                  <div className="flex gap-2 justify-center">
-                    <button onClick={saveProfile} className="p-2 rounded-lg bg-primary text-primary-foreground hover:opacity-90"><Check className="w-4 h-4" /></button>
-                    <button onClick={() => setEditing(false)} className="p-2 rounded-lg bg-secondary text-foreground hover:bg-secondary/80"><X className="w-4 h-4" /></button>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <div className="flex items-center gap-1 mt-4">
-                    <h2 className="text-xl font-semibold text-foreground">{profile?.display_name || profile?.username || "Anonymous"}</h2>
-                    {isVerified && <BadgeCheck className="w-5 h-5 text-primary" />}
-                  </div>
-                  {profile?.username && <p className="text-sm text-muted-foreground">@{profile.username}</p>}
-                  {profile?.bio && <p className="mt-2 text-sm text-muted-foreground text-center max-w-xs">{profile.bio}</p>}
-                </>
-              )}
-            </div>
-
-            <div className="flex justify-center gap-8 mt-6 pt-6 border-t border-border/30">
-              <div className="text-center">
-                <p className="text-lg font-bold text-foreground">{stats.posts}</p>
-                <p className="text-xs text-muted-foreground">Posts</p>
-              </div>
-              <Link to={`/profile/${targetId}/followers`} className="text-center hover:opacity-80 transition-opacity">
-                <p className="text-lg font-bold text-foreground">{stats.followers}</p>
-                <p className="text-xs text-muted-foreground">Followers</p>
-              </Link>
-              <Link to={`/profile/${targetId}/following`} className="text-center hover:opacity-80 transition-opacity">
-                <p className="text-lg font-bold text-foreground">{stats.following}</p>
-                <p className="text-xs text-muted-foreground">Following</p>
-              </Link>
-            </div>
-
-            <div className="flex justify-center mt-6 gap-3">
-              {isOwnProfile ? (
-                <>
-                  {!editing && (
-                    <button onClick={startEdit} className="gradient-border rounded-full px-6 py-2 text-sm font-medium text-foreground hover:bg-secondary/50 transition-colors">
-                      Edit Profile
-                    </button>
-                  )}
-                  <Link to="/analytics" className="flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium text-foreground bg-secondary/50 hover:bg-secondary/80 transition-colors">
-                    <BarChart3 className="w-4 h-4" />
-                    Analytics
-                  </Link>
-                </>
-              ) : (
-                <button onClick={toggleFollow} disabled={followLoading} className={`rounded-full px-6 py-2 text-sm font-medium transition-colors ${isFollowing ? "bg-secondary text-foreground hover:bg-secondary/80" : "bg-gradient-to-r from-pulse-blue to-pulse-cyan text-foreground hover:opacity-90"}`}>
-                  {isFollowing ? "Unfollow" : "Follow"}
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Pinned post */}
-        {pinnedPost && (
-          <PostCard
-            post={pinnedPost}
-            currentUserId={user.id}
-            onUpdate={refetchPosts}
-            isPinned
-            onPin={() => {}}
-            onUnpin={isOwnProfile ? unpinPost : undefined}
+        {/* Settings section */}
+        {isOwnProfile && activeSection === "settings" && (
+          <ProfileSettings
+            userId={user.id}
+            userEmail={user.email || ""}
+            profile={profile}
           />
         )}
 
-        {/* User posts */}
-        {otherPosts.length > 0 && (
+        {/* Posts section */}
+        {(activeSection === "posts" || !isOwnProfile) && (
           <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-muted-foreground px-1">Posts</h3>
-            {otherPosts.map((p) => (
-              <PostCard
-                key={p.id}
-                post={p}
-                currentUserId={user.id}
-                onUpdate={refetchPosts}
-                onPin={isOwnProfile ? () => pinPost(p.id) : undefined}
-                onUnpin={undefined}
-              />
-            ))}
+            {pinnedPost && (
+              <AnimatedPost index={0}>
+                <PostCard
+                  post={pinnedPost}
+                  currentUserId={user.id}
+                  onUpdate={refetchPosts}
+                  isPinned
+                  onPin={() => {}}
+                  onUnpin={isOwnProfile ? unpinPost : undefined}
+                />
+              </AnimatedPost>
+            )}
+
+            {otherPosts.length > 0 ? (
+              otherPosts.map((p, i) => (
+                <AnimatedPost key={p.id} index={i + 1}>
+                  <PostCard
+                    post={p}
+                    currentUserId={user.id}
+                    onUpdate={refetchPosts}
+                    onPin={isOwnProfile ? () => pinPost(p.id) : undefined}
+                    onUnpin={undefined}
+                  />
+                </AnimatedPost>
+              ))
+            ) : (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="glass rounded-2xl p-8 text-center"
+              >
+                <p className="text-muted-foreground text-sm">No posts yet</p>
+              </motion.div>
+            )}
           </div>
         )}
       </main>

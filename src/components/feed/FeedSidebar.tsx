@@ -20,7 +20,7 @@ const navItems = [
   { label: "Trending", icon: TrendingUp, path: "/trending" },
   { label: "Bookmarks", icon: Bookmark, path: "/bookmarks" },
   { label: "Lists", icon: List, path: "/lists" },
-  { label: "Settings", icon: Settings, path: "/settings" },
+  { label: "Settings", icon: Settings, path: "/settings" }, // redirects to profile
 ];
 
 const FeedSidebar = ({ currentUserId, onMessagesClick, profile }: FeedSidebarProps) => {

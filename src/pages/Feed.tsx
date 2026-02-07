@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useFeed } from "@/hooks/useFeed";
 import CreatePost from "@/components/feed/CreatePost";
 import PostCard from "@/components/feed/PostCard";
+import UserSearch from "@/components/feed/UserSearch";
 import { LogOut, User, Compass, Users } from "lucide-react";
 
 type FeedTab = "following" | "discover";
@@ -33,6 +34,7 @@ const Feed = () => {
       </header>
 
       <main className="max-w-2xl mx-auto px-4 py-6 space-y-4">
+        <UserSearch />
         <CreatePost userId={user.id} onCreated={refetch} />
 
         {/* Feed tabs */}

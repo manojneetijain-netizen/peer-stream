@@ -2,8 +2,10 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { AnimatePresence } from "framer-motion";
 import { AuthProvider } from "@/hooks/useAuth";
+import PageTransition from "@/components/layout/PageTransition";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Feed from "./pages/Feed";
@@ -20,6 +22,31 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+const AnimatedRoutes = () => {
+  const location = useLocation();
+
+  return (
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
+        <Route path="/" element={<Index />} />
+        <Route path="/auth" element={<PageTransition><Auth /></PageTransition>} />
+        <Route path="/feed" element={<Feed />} />
+        <Route path="/profile/:userId" element={<PageTransition><Profile /></PageTransition>} />
+        <Route path="/profile/:userId/followers" element={<PageTransition><FollowList /></PageTransition>} />
+        <Route path="/profile/:userId/following" element={<PageTransition><FollowList /></PageTransition>} />
+        <Route path="/bookmarks" element={<PageTransition><Bookmarks /></PageTransition>} />
+        <Route path="/hashtag/:tag" element={<PageTransition><HashtagPage /></PageTransition>} />
+        <Route path="/trending" element={<PageTransition><TrendingPage /></PageTransition>} />
+        <Route path="/analytics" element={<PageTransition><Analytics /></PageTransition>} />
+        <Route path="/settings/notifications" element={<PageTransition><NotificationSettings /></PageTransition>} />
+        <Route path="/lists" element={<PageTransition><UserLists /></PageTransition>} />
+        <Route path="/explore" element={<PageTransition><ExplorePage /></PageTransition>} />
+        <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
+      </Routes>
+    </AnimatePresence>
+  );
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -27,22 +54,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/feed" element={<Feed />} />
-            <Route path="/profile/:userId" element={<Profile />} />
-            <Route path="/profile/:userId/followers" element={<FollowList />} />
-            <Route path="/profile/:userId/following" element={<FollowList />} />
-            <Route path="/bookmarks" element={<Bookmarks />} />
-            <Route path="/hashtag/:tag" element={<HashtagPage />} />
-            <Route path="/trending" element={<TrendingPage />} />
-            <Route path="/analytics" element={<Analytics />} />
-            <Route path="/settings/notifications" element={<NotificationSettings />} />
-            <Route path="/lists" element={<UserLists />} />
-            <Route path="/explore" element={<ExplorePage />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <AnimatedRoutes />
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Heart, MessageCircle, Trash2, Repeat2, Bookmark, Pencil, Quote } from "lucide-react";
+import { Heart, MessageCircle, Trash2, Repeat2, Bookmark, Pencil, Quote, Flag, Pin, BadgeCheck } from "lucide-react";
 import type { PostWithDetails } from "@/hooks/useFeed";
 import CommentsSection from "./CommentsSection";
 import ReactionsPicker from "./ReactionsPicker";
@@ -13,6 +13,9 @@ import BlockMuteMenu from "./BlockMuteMenu";
 import PollDisplay from "./PollDisplay";
 import QuotedPostCard from "./QuotedPostCard";
 import QuoteRepostModal from "./QuoteRepostModal";
+import ShareMenu from "./ShareMenu";
+import ReportModal from "./ReportModal";
+import BookmarkFolders from "./BookmarkFolders";
 
 interface PostCardProps {
   post: PostWithDetails;
@@ -24,9 +27,13 @@ interface PostCardProps {
   onUnblock?: () => void;
   onMute?: () => void;
   onUnmute?: () => void;
+  isPinned?: boolean;
+  onPin?: () => void;
+  onUnpin?: () => void;
+  showVerified?: boolean;
 }
 
-const PostCard = ({ post, currentUserId, onUpdate, isBlocked, isMuted, onBlock, onUnblock, onMute, onUnmute }: PostCardProps) => {
+const PostCard = ({ post, currentUserId, onUpdate, isBlocked, isMuted, onBlock, onUnblock, onMute, onUnmute, isPinned, onPin, onUnpin, showVerified }: PostCardProps) => {
   const [liked, setLiked] = useState(post.liked_by_me);
   const [likesCount, setLikesCount] = useState(post.likes_count);
   const [reposted, setReposted] = useState(post.reposted_by_me);
@@ -35,8 +42,11 @@ const PostCard = ({ post, currentUserId, onUpdate, isBlocked, isMuted, onBlock, 
   const [showComments, setShowComments] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [showQuote, setShowQuote] = useState(false);
+  const [showReport, setShowReport] = useState(false);
+  const [showFolders, setShowFolders] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [images, setImages] = useState<string[]>([]);
+  const [authorVerified, setAuthorVerified] = useState(false);
 
   const isOwner = post.user_id === currentUserId;
   const showBlockMute = !isOwner && onBlock && onUnblock && onMute && onUnmute;
@@ -46,7 +56,7 @@ const PostCard = ({ post, currentUserId, onUpdate, isBlocked, isMuted, onBlock, 
     supabase.from("post_views").insert({ post_id: post.id, viewer_id: currentUserId });
   }, [post.id, currentUserId]);
 
-  // Fetch multi-images
+  // Fetch multi-images & verified status
   useEffect(() => {
     const fetchImages = async () => {
       const { data } = await supabase
@@ -62,7 +72,17 @@ const PostCard = ({ post, currentUserId, onUpdate, isBlocked, isMuted, onBlock, 
       }
     };
     fetchImages();
-  }, [post.id, post.image_url]);
+
+    // Check verified
+    supabase
+      .from("profiles")
+      .select("is_verified")
+      .eq("user_id", post.user_id)
+      .single()
+      .then(({ data }) => {
+        if (data && (data as any).is_verified) setAuthorVerified(true);
+      });
+  }, [post.id, post.image_url, post.user_id]);
 
   const toggleLike = async () => {
     if (liked) {
@@ -109,7 +129,6 @@ const PostCard = ({ post, currentUserId, onUpdate, isBlocked, isMuted, onBlock, 
     await supabase.from("post_hashtags").delete().eq("post_id", post.id);
     await supabase.from("post_images").delete().eq("post_id", post.id);
     await supabase.from("post_views").delete().eq("post_id", post.id);
-    // Delete poll data
     const { data: pollData } = await supabase.from("polls").select("id").eq("post_id", post.id).maybeSingle();
     if (pollData) {
       await supabase.from("poll_votes").delete().eq("poll_id", pollData.id);
@@ -134,6 +153,11 @@ const PostCard = ({ post, currentUserId, onUpdate, isBlocked, isMuted, onBlock, 
 
   return (
     <div className={`glass rounded-2xl p-4 ${deleting ? "opacity-50 pointer-events-none" : ""}`}>
+      {isPinned && (
+        <div className="flex items-center gap-1 text-xs text-accent mb-2">
+          <Pin className="w-3 h-3" /> Pinned post
+        </div>
+      )}
       {/* Header */}
       <div className="flex items-center gap-3">
         <Link to={`/profile/${post.user_id}`}>
@@ -143,9 +167,12 @@ const PostCard = ({ post, currentUserId, onUpdate, isBlocked, isMuted, onBlock, 
           </Avatar>
         </Link>
         <div className="flex-1 min-w-0">
-          <Link to={`/profile/${post.user_id}`} className="text-sm font-medium text-foreground hover:underline">
-            {post.author.display_name || post.author.username || "Anonymous"}
-          </Link>
+          <div className="flex items-center gap-1">
+            <Link to={`/profile/${post.user_id}`} className="text-sm font-medium text-foreground hover:underline">
+              {post.author.display_name || post.author.username || "Anonymous"}
+            </Link>
+            {authorVerified && <BadgeCheck className="w-4 h-4 text-primary shrink-0" />}
+          </div>
           {post.author.username && (
             <p className="text-xs text-muted-foreground">@{post.author.username}</p>
           )}
@@ -153,6 +180,11 @@ const PostCard = ({ post, currentUserId, onUpdate, isBlocked, isMuted, onBlock, 
         <span className="text-xs text-muted-foreground">{timeAgo(post.created_at)}</span>
         {isOwner && (
           <div className="flex items-center gap-0.5">
+            {onPin && (
+              <button onClick={isPinned ? onUnpin : onPin} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors" title={isPinned ? "Unpin" : "Pin to profile"}>
+                <Pin className={`w-3.5 h-3.5 ${isPinned ? "text-accent" : ""}`} />
+              </button>
+            )}
             <button onClick={() => setShowEdit(true)} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors" title="Edit post">
               <Pencil className="w-3.5 h-3.5" />
             </button>
@@ -161,25 +193,24 @@ const PostCard = ({ post, currentUserId, onUpdate, isBlocked, isMuted, onBlock, 
             </button>
           </div>
         )}
+        {!isOwner && (
+          <button onClick={() => setShowReport(true)} className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors" title="Report">
+            <Flag className="w-3.5 h-3.5" />
+          </button>
+        )}
         {showBlockMute && (
           <BlockMuteMenu userId={post.user_id} isBlocked={isBlocked || false} isMuted={isMuted || false} onBlock={onBlock!} onUnblock={onUnblock!} onMute={onMute!} onUnmute={onUnmute!} />
         )}
       </div>
 
-      {/* Content with hashtag rendering */}
+      {/* Content */}
       {post.content && <HashtagRenderer content={post.content} />}
-
-      {/* Image carousel */}
       {images.length > 0 && <ImageCarousel images={images} />}
-
-      {/* Poll */}
       <PollDisplay postId={post.id} currentUserId={currentUserId} />
-
-      {/* Quoted post */}
       {(post as any).quoted_post_id && <QuotedPostCard quotedPostId={(post as any).quoted_post_id} />}
 
       {/* Actions */}
-      <div className="flex items-center gap-4 mt-4 pt-3 border-t border-border/30">
+      <div className="flex items-center gap-3 mt-4 pt-3 border-t border-border/30">
         <button onClick={toggleLike} className="flex items-center gap-1.5 text-sm transition-colors group">
           <Heart className={`w-4 h-4 transition-colors ${liked ? "fill-destructive text-destructive" : "text-muted-foreground group-hover:text-foreground"}`} />
           <span className={liked ? "text-destructive" : "text-muted-foreground group-hover:text-foreground"}>{likesCount}</span>
@@ -196,14 +227,19 @@ const PostCard = ({ post, currentUserId, onUpdate, isBlocked, isMuted, onBlock, 
           <Quote className="w-4 h-4" />
         </button>
         <ReactionsPicker postId={post.id} currentUserId={currentUserId} myReaction={post.my_reaction} reactionCounts={post.reaction_counts} onUpdate={onUpdate} />
-        <button onClick={toggleBookmark} className="ml-auto text-muted-foreground hover:text-foreground transition-colors">
-          <Bookmark className={`w-4 h-4 ${bookmarked ? "fill-foreground text-foreground" : ""}`} />
-        </button>
+        <div className="ml-auto flex items-center gap-2">
+          <ShareMenu postId={post.id} />
+          <button onClick={toggleBookmark} className="text-muted-foreground hover:text-foreground transition-colors" onContextMenu={(e) => { e.preventDefault(); if (bookmarked) setShowFolders(true); }}>
+            <Bookmark className={`w-4 h-4 ${bookmarked ? "fill-foreground text-foreground" : ""}`} />
+          </button>
+        </div>
       </div>
 
       {showComments && <CommentsSection postId={post.id} currentUserId={currentUserId} onUpdate={onUpdate} />}
       {showEdit && <EditPostModal postId={post.id} initialContent={post.content} onClose={() => setShowEdit(false)} onSaved={onUpdate} />}
       {showQuote && <QuoteRepostModal post={post} currentUserId={currentUserId} onClose={() => setShowQuote(false)} onCreated={onUpdate} />}
+      {showReport && <ReportModal postId={post.id} currentUserId={currentUserId} onClose={() => setShowReport(false)} />}
+      {showFolders && <BookmarkFolders currentUserId={currentUserId} postId={post.id} onFolderSelected={() => {}} onClose={() => setShowFolders(false)} />}
     </div>
   );
 };

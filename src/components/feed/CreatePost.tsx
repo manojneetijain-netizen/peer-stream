@@ -1,8 +1,11 @@
 import { useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { ImagePlus, Send, X } from "lucide-react";
+import { ImagePlus, Send, X, FileText, Clock, Save } from "lucide-react";
 import { extractHashtags } from "./HashtagRenderer";
 import PollCreator from "./PollCreator";
+import PostScheduler from "./PostScheduler";
+import DraftManager from "./DraftManager";
+import { toast } from "sonner";
 
 interface CreatePostProps {
   userId: string;
@@ -15,12 +18,14 @@ const CreatePost = ({ userId, onCreated }: CreatePostProps) => {
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [pollData, setPollData] = useState<{ question: string; options: string[] } | null>(null);
+  const [scheduledAt, setScheduledAt] = useState<Date | null>(null);
+  const [showDrafts, setShowDrafts] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const handleImages = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
-    const newFiles = [...imageFiles, ...files].slice(0, 10); // Max 10 images
+    const newFiles = [...imageFiles, ...files].slice(0, 10);
     setImageFiles(newFiles);
     setImagePreviews(newFiles.map((f) => URL.createObjectURL(f)));
   };
@@ -38,6 +43,21 @@ const CreatePost = ({ userId, onCreated }: CreatePostProps) => {
     if (fileRef.current) fileRef.current.value = "";
   };
 
+  const saveDraft = async () => {
+    await supabase.from("drafts").insert({
+      user_id: userId,
+      content: content.trim(),
+      image_urls: [],
+      poll_data: pollData,
+    });
+    toast.success("Draft saved");
+  };
+
+  const loadDraft = (draft: any) => {
+    setContent(draft.content || "");
+    setPollData(draft.poll_data || null);
+  };
+
   const handleSubmit = async () => {
     if (!content.trim() && imageFiles.length === 0) return;
     setSubmitting(true);
@@ -52,31 +72,25 @@ const CreatePost = ({ userId, onCreated }: CreatePostProps) => {
       uploadedUrls.push(publicUrl);
     }
 
-    // Create post (first image as main image_url for backward compat)
+    // Create post
     const { data: post } = await supabase
       .from("posts")
       .insert({
         user_id: userId,
         content: content.trim(),
         image_url: uploadedUrls[0] || null,
+        scheduled_at: scheduledAt?.toISOString() || null,
       })
       .select("id")
       .single();
 
-    if (post && uploadedUrls.length > 1) {
-      // Insert additional images into post_images
+    if (post && uploadedUrls.length > 0) {
       const imageRows = uploadedUrls.map((url, i) => ({
         post_id: post.id,
         image_url: url,
         position: i,
       }));
       await supabase.from("post_images").insert(imageRows);
-    } else if (post && uploadedUrls.length === 1) {
-      await supabase.from("post_images").insert([{
-        post_id: post.id,
-        image_url: uploadedUrls[0],
-        position: 0,
-      }]);
     }
 
     // Extract and save hashtags
@@ -126,9 +140,14 @@ const CreatePost = ({ userId, onCreated }: CreatePostProps) => {
       }
     }
 
+    if (scheduledAt) {
+      toast.success(`Post scheduled for ${scheduledAt.toLocaleString()}`);
+    }
+
     setContent("");
     removeAllImages();
     setPollData(null);
+    setScheduledAt(null);
     setSubmitting(false);
     onCreated();
   };
@@ -138,7 +157,7 @@ const CreatePost = ({ userId, onCreated }: CreatePostProps) => {
       <textarea
         value={content}
         onChange={(e) => setContent(e.target.value)}
-        placeholder="What's on your mind? Use #hashtags!"
+        placeholder="What's on your mind? Use #hashtags and @mentions!"
         rows={3}
         className="w-full bg-transparent text-foreground placeholder:text-muted-foreground text-sm resize-none focus:outline-none"
       />
@@ -157,8 +176,14 @@ const CreatePost = ({ userId, onCreated }: CreatePostProps) => {
           ))}
         </div>
       )}
+      {scheduledAt && (
+        <div className="mt-2 flex items-center gap-2 text-xs text-accent">
+          <Clock className="w-3 h-3" />
+          Scheduled: {scheduledAt.toLocaleString()}
+        </div>
+      )}
       <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/30">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
           <button
             onClick={() => fileRef.current?.click()}
             className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
@@ -166,8 +191,24 @@ const CreatePost = ({ userId, onCreated }: CreatePostProps) => {
             <ImagePlus className="w-5 h-5" />
           </button>
           <PollCreator onPollChange={setPollData} />
+          <PostScheduler onSchedule={setScheduledAt} />
+          <button
+            onClick={saveDraft}
+            disabled={!content.trim()}
+            className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors disabled:opacity-30"
+            title="Save draft"
+          >
+            <Save className="w-5 h-5" />
+          </button>
+          <button
+            onClick={() => setShowDrafts(true)}
+            className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
+            title="Load draft"
+          >
+            <FileText className="w-5 h-5" />
+          </button>
           {imageFiles.length > 0 && (
-            <span className="text-xs text-muted-foreground">{imageFiles.length}/10 images</span>
+            <span className="text-xs text-muted-foreground">{imageFiles.length}/10</span>
           )}
         </div>
         <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={handleImages} />
@@ -177,9 +218,10 @@ const CreatePost = ({ userId, onCreated }: CreatePostProps) => {
           className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-pulse-blue to-pulse-cyan text-foreground text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
         >
           <Send className="w-4 h-4" />
-          Post
+          {scheduledAt ? "Schedule" : "Post"}
         </button>
       </div>
+      {showDrafts && <DraftManager currentUserId={userId} onLoadDraft={loadDraft} onClose={() => setShowDrafts(false)} />}
     </div>
   );
 };

@@ -13,6 +13,7 @@ import Bookmarks from "./pages/Bookmarks";
 import HashtagPage from "./pages/HashtagPage";
 import TrendingPage from "./pages/TrendingPage";
 import Analytics from "./pages/Analytics";
+import NotificationSettings from "./pages/NotificationSettings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -35,6 +36,7 @@ const App = () => (
             <Route path="/hashtag/:tag" element={<HashtagPage />} />
             <Route path="/trending" element={<TrendingPage />} />
             <Route path="/analytics" element={<Analytics />} />
+            <Route path="/settings/notifications" element={<NotificationSettings />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

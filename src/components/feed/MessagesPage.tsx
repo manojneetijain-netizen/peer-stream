@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import OnlineIndicator from "./OnlineIndicator";
 import TypingIndicator from "./TypingIndicator";
-import { Send, ArrowLeft } from "lucide-react";
+import { Send, ArrowLeft, PenSquare, Search, X } from "lucide-react";
 
 interface Conversation {
   user_id: string;
@@ -40,6 +40,9 @@ const MessagesPage = ({ currentUserId, onBack, isOnline, isTypingTo, setTyping }
   const [messages, setMessages] = useState<Message[]>([]);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
+  const [showNewMessage, setShowNewMessage] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
   const [selectedProfile, setSelectedProfile] = useState<{
@@ -226,18 +229,106 @@ const MessagesPage = ({ currentUserId, onBack, isOnline, isTypingTo, setTyping }
     );
   }
 
+  // New message search
+
+  const searchUsers = async (query: string) => {
+    setSearchQuery(query);
+    if (!query.trim()) { setSearchResults([]); return; }
+    const { data } = await supabase
+      .from("profiles")
+      .select("user_id, username, display_name, avatar_url")
+      .neq("user_id", currentUserId)
+      .or(`username.ilike.%${query}%,display_name.ilike.%${query}%`)
+      .limit(10);
+    setSearchResults(data || []);
+  };
+
+  const startConversation = (userId: string, profile: any) => {
+    setSelectedProfile({ display_name: profile.display_name, username: profile.username, avatar_url: profile.avatar_url });
+    setSelectedUser(userId);
+    setShowNewMessage(false);
+    setSearchQuery("");
+    setSearchResults([]);
+  };
+
   // Conversations list
   return (
     <div>
-      <div className="flex items-center gap-3 p-3 border-b border-border/30">
-        <button onClick={onBack} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="w-4 h-4" />
+      <div className="flex items-center justify-between p-3 border-b border-border/30">
+        <div className="flex items-center gap-3">
+          <button onClick={onBack} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="w-4 h-4" />
+          </button>
+          <h2 className="text-sm font-semibold text-foreground">Messages</h2>
+        </div>
+        <button
+          onClick={() => setShowNewMessage(true)}
+          className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
+        >
+          <PenSquare className="w-4 h-4" />
         </button>
-        <h2 className="text-sm font-semibold text-foreground">Messages</h2>
       </div>
-      {conversations.length === 0 ? (
-        <div className="p-8 text-center text-sm text-muted-foreground">
-          No messages yet. Visit a profile and send a message!
+
+      {/* New message search modal */}
+      {showNewMessage && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 bg-background/60 backdrop-blur-sm" onClick={() => { setShowNewMessage(false); setSearchQuery(""); setSearchResults([]); }}>
+          <div className="glass rounded-2xl p-4 w-full max-w-sm mx-4 border border-border/30" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-foreground">New Message</h3>
+              <button onClick={() => { setShowNewMessage(false); setSearchQuery(""); setSearchResults([]); }} className="text-muted-foreground hover:text-foreground">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="relative mb-3">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <input
+                value={searchQuery}
+                onChange={(e) => searchUsers(e.target.value)}
+                placeholder="Search users..."
+                autoFocus
+                className="w-full pl-9 pr-3 py-2 rounded-xl bg-secondary/40 border border-border/50 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+              />
+            </div>
+            <div className="max-h-64 overflow-y-auto space-y-1">
+              {searchResults.length === 0 && searchQuery.trim() && (
+                <p className="text-xs text-muted-foreground text-center py-4">No users found</p>
+              )}
+              {!searchQuery.trim() && (
+                <p className="text-xs text-muted-foreground text-center py-4">Search for a user to start a conversation</p>
+              )}
+              {searchResults.map((u) => {
+                const initials = (u.display_name || u.username || "?").slice(0, 2).toUpperCase();
+                return (
+                  <button
+                    key={u.user_id}
+                    onClick={() => startConversation(u.user_id, u)}
+                    className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-secondary/30 transition-colors"
+                  >
+                    <Avatar className="w-9 h-9">
+                      <AvatarImage src={u.avatar_url || undefined} />
+                      <AvatarFallback className="bg-secondary text-foreground text-xs">{initials}</AvatarFallback>
+                    </Avatar>
+                    <div className="text-left">
+                      <p className="text-sm font-medium text-foreground">{u.display_name || u.username || "Anonymous"}</p>
+                      {u.username && <p className="text-xs text-muted-foreground">@{u.username}</p>}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {conversations.length === 0 && !showNewMessage ? (
+        <div className="p-8 text-center">
+          <p className="text-sm text-muted-foreground mb-3">No messages yet</p>
+          <button
+            onClick={() => setShowNewMessage(true)}
+            className="px-4 py-2 rounded-full bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
+          >
+            Start a conversation
+          </button>
         </div>
       ) : (
         <div className="divide-y divide-border/30">
@@ -268,7 +359,7 @@ const MessagesPage = ({ currentUserId, onBack, isOnline, isTypingTo, setTyping }
                   <motion.span
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
-                    className="w-5 h-5 rounded-full bg-gradient-to-r from-primary to-accent text-[10px] font-bold flex items-center justify-center text-primary-foreground"
+                    className="w-5 h-5 rounded-full bg-primary text-[10px] font-bold flex items-center justify-center text-primary-foreground"
                   >
                     {conv.unread}
                   </motion.span>

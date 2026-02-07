@@ -3,6 +3,7 @@ import { Link, Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import MobileBottomNav from "@/components/feed/MobileBottomNav";
 import { ArrowLeft, Plus, List, Trash2, UserPlus, UserMinus, X, Users } from "lucide-react";
 
 interface UserList {
@@ -151,7 +152,7 @@ const UserLists = () => {
         </div>
       </header>
 
-      <main className="max-w-2xl mx-auto px-4 py-6 space-y-4">
+      <main className="max-w-2xl mx-auto px-4 py-6 pb-20 lg:pb-6 space-y-4">
         {selectedList ? (
           <>
             {selectedList.description && (
@@ -285,6 +286,7 @@ const UserLists = () => {
           </div>
         )}
       </main>
+      <MobileBottomNav />
     </div>
   );
 };

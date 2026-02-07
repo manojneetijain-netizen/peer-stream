@@ -10,6 +10,8 @@ import Feed from "./pages/Feed";
 import Profile from "./pages/Profile";
 import FollowList from "./pages/FollowList";
 import Bookmarks from "./pages/Bookmarks";
+import HashtagPage from "./pages/HashtagPage";
+import TrendingPage from "./pages/TrendingPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -29,6 +31,8 @@ const App = () => (
             <Route path="/profile/:userId/followers" element={<FollowList />} />
             <Route path="/profile/:userId/following" element={<FollowList />} />
             <Route path="/bookmarks" element={<Bookmarks />} />
+            <Route path="/hashtag/:tag" element={<HashtagPage />} />
+            <Route path="/trending" element={<TrendingPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

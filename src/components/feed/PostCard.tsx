@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -7,14 +7,23 @@ import type { PostWithDetails } from "@/hooks/useFeed";
 import CommentsSection from "./CommentsSection";
 import ReactionsPicker from "./ReactionsPicker";
 import EditPostModal from "./EditPostModal";
+import ImageCarousel from "./ImageCarousel";
+import HashtagRenderer from "./HashtagRenderer";
+import BlockMuteMenu from "./BlockMuteMenu";
 
 interface PostCardProps {
   post: PostWithDetails;
   currentUserId: string;
   onUpdate: () => void;
+  isBlocked?: boolean;
+  isMuted?: boolean;
+  onBlock?: () => void;
+  onUnblock?: () => void;
+  onMute?: () => void;
+  onUnmute?: () => void;
 }
 
-const PostCard = ({ post, currentUserId, onUpdate }: PostCardProps) => {
+const PostCard = ({ post, currentUserId, onUpdate, isBlocked, isMuted, onBlock, onUnblock, onMute, onUnmute }: PostCardProps) => {
   const [liked, setLiked] = useState(post.liked_by_me);
   const [likesCount, setLikesCount] = useState(post.likes_count);
   const [reposted, setReposted] = useState(post.reposted_by_me);
@@ -23,8 +32,28 @@ const PostCard = ({ post, currentUserId, onUpdate }: PostCardProps) => {
   const [showComments, setShowComments] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [images, setImages] = useState<string[]>([]);
 
   const isOwner = post.user_id === currentUserId;
+  const showBlockMute = !isOwner && onBlock && onUnblock && onMute && onUnmute;
+
+  // Fetch multi-images
+  useEffect(() => {
+    const fetchImages = async () => {
+      const { data } = await supabase
+        .from("post_images")
+        .select("image_url, position")
+        .eq("post_id", post.id)
+        .order("position", { ascending: true });
+
+      if (data && data.length > 0) {
+        setImages(data.map((d: any) => d.image_url));
+      } else if (post.image_url) {
+        setImages([post.image_url]);
+      }
+    };
+    fetchImages();
+  }, [post.id, post.image_url]);
 
   const toggleLike = async () => {
     if (liked) {
@@ -68,6 +97,8 @@ const PostCard = ({ post, currentUserId, onUpdate }: PostCardProps) => {
     await supabase.from("reposts").delete().eq("post_id", post.id);
     await supabase.from("reactions").delete().eq("post_id", post.id);
     await supabase.from("bookmarks").delete().eq("post_id", post.id);
+    await supabase.from("post_hashtags").delete().eq("post_id", post.id);
+    await supabase.from("post_images").delete().eq("post_id", post.id);
     await supabase.from("posts").delete().eq("id", post.id);
     onUpdate();
   };
@@ -121,14 +152,24 @@ const PostCard = ({ post, currentUserId, onUpdate }: PostCardProps) => {
             </button>
           </div>
         )}
+        {showBlockMute && (
+          <BlockMuteMenu
+            userId={post.user_id}
+            isBlocked={isBlocked || false}
+            isMuted={isMuted || false}
+            onBlock={onBlock!}
+            onUnblock={onUnblock!}
+            onMute={onMute!}
+            onUnmute={onUnmute!}
+          />
+        )}
       </div>
 
-      {/* Content */}
-      <p className="mt-3 text-sm text-foreground whitespace-pre-wrap">{post.content}</p>
+      {/* Content with hashtag rendering */}
+      {post.content && <HashtagRenderer content={post.content} />}
 
-      {post.image_url && (
-        <img src={post.image_url} alt="Post" className="mt-3 rounded-xl w-full max-h-96 object-cover" />
-      )}
+      {/* Image carousel */}
+      {images.length > 0 && <ImageCarousel images={images} />}
 
       {/* Actions */}
       <div className="flex items-center gap-4 mt-4 pt-3 border-t border-border/30">

@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useProfile, useProfileStats, useIsFollowing } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { ArrowLeft, Camera, Check, X, ImagePlus } from "lucide-react";
+import { ArrowLeft, Camera, Check, X, ImagePlus, BarChart3 } from "lucide-react";
 
 const Profile = () => {
   const { userId } = useParams<{ userId: string }>();
@@ -170,11 +170,20 @@ const Profile = () => {
             {/* Actions */}
             <div className="flex justify-center mt-6 gap-3">
               {isOwnProfile ? (
-                !editing && (
-                  <button onClick={startEdit} className="gradient-border rounded-full px-6 py-2 text-sm font-medium text-foreground hover:bg-secondary/50 transition-colors">
-                    Edit Profile
-                  </button>
-                )
+                <>
+                  {!editing && (
+                    <button onClick={startEdit} className="gradient-border rounded-full px-6 py-2 text-sm font-medium text-foreground hover:bg-secondary/50 transition-colors">
+                      Edit Profile
+                    </button>
+                  )}
+                  <Link
+                    to="/analytics"
+                    className="flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium text-foreground bg-secondary/50 hover:bg-secondary/80 transition-colors"
+                  >
+                    <BarChart3 className="w-4 h-4" />
+                    Analytics
+                  </Link>
+                </>
               ) : (
                 <button
                   onClick={toggleFollow}

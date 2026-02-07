@@ -12,6 +12,7 @@ import FollowList from "./pages/FollowList";
 import Bookmarks from "./pages/Bookmarks";
 import HashtagPage from "./pages/HashtagPage";
 import TrendingPage from "./pages/TrendingPage";
+import Analytics from "./pages/Analytics";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -33,6 +34,7 @@ const App = () => (
             <Route path="/bookmarks" element={<Bookmarks />} />
             <Route path="/hashtag/:tag" element={<HashtagPage />} />
             <Route path="/trending" element={<TrendingPage />} />
+            <Route path="/analytics" element={<Analytics />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

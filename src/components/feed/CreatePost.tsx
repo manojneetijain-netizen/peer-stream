@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ImagePlus, Send, X } from "lucide-react";
 import { extractHashtags } from "./HashtagRenderer";
+import PollCreator from "./PollCreator";
 
 interface CreatePostProps {
   userId: string;
@@ -13,6 +14,7 @@ const CreatePost = ({ userId, onCreated }: CreatePostProps) => {
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const [pollData, setPollData] = useState<{ question: string; options: string[] } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const handleImages = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -81,7 +83,6 @@ const CreatePost = ({ userId, onCreated }: CreatePostProps) => {
     if (post) {
       const tags = extractHashtags(content);
       for (const tag of tags) {
-        // Upsert hashtag
         const { data: existing } = await supabase
           .from("hashtags")
           .select("id")
@@ -106,10 +107,28 @@ const CreatePost = ({ userId, onCreated }: CreatePostProps) => {
           hashtag_id: hashtagId,
         });
       }
+
+      // Create poll if present
+      if (pollData) {
+        const { data: poll } = await supabase
+          .from("polls")
+          .insert({ post_id: post.id, question: pollData.question })
+          .select("id")
+          .single();
+        if (poll) {
+          const optionRows = pollData.options.map((text, i) => ({
+            poll_id: poll.id,
+            text,
+            position: i,
+          }));
+          await supabase.from("poll_options").insert(optionRows);
+        }
+      }
     }
 
     setContent("");
     removeAllImages();
+    setPollData(null);
     setSubmitting(false);
     onCreated();
   };
@@ -146,6 +165,7 @@ const CreatePost = ({ userId, onCreated }: CreatePostProps) => {
           >
             <ImagePlus className="w-5 h-5" />
           </button>
+          <PollCreator onPollChange={setPollData} />
           {imageFiles.length > 0 && (
             <span className="text-xs text-muted-foreground">{imageFiles.length}/10 images</span>
           )}

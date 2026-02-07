@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useProfile, useProfileStats, useIsFollowing } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { ArrowLeft, Camera, Check, X } from "lucide-react";
+import { ArrowLeft, Camera, Check, X, ImagePlus } from "lucide-react";
 
 const Profile = () => {
   const { userId } = useParams<{ userId: string }>();
@@ -20,7 +20,9 @@ const Profile = () => {
   const [displayName, setDisplayName] = useState("");
   const [bio, setBio] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [uploadingCover, setUploadingCover] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const coverRef = useRef<HTMLInputElement>(null);
 
   if (authLoading || loading) return null;
   if (!user) return <Navigate to="/auth" replace />;
@@ -33,10 +35,7 @@ const Profile = () => {
 
   const saveProfile = async () => {
     if (!user) return;
-    await supabase
-      .from("profiles")
-      .update({ display_name: displayName, bio })
-      .eq("user_id", user.id);
+    await supabase.from("profiles").update({ display_name: displayName, bio }).eq("user_id", user.id);
     setEditing(false);
     refetch();
   };
@@ -54,6 +53,19 @@ const Profile = () => {
     refetch();
   };
 
+  const uploadCover = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    setUploadingCover(true);
+    const ext = file.name.split(".").pop();
+    const path = `${user.id}/cover.${ext}`;
+    await supabase.storage.from("avatars").upload(path, file, { upsert: true });
+    const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(path);
+    await supabase.from("profiles").update({ cover_url: publicUrl }).eq("user_id", user.id);
+    setUploadingCover(false);
+    refetch();
+  };
+
   const initials = (profile?.display_name || profile?.username || "?").slice(0, 2).toUpperCase();
 
   return (
@@ -68,92 +80,115 @@ const Profile = () => {
       </header>
 
       <main className="max-w-2xl mx-auto px-4 py-8">
-        <div className="glass rounded-2xl p-6">
-          {/* Avatar */}
-          <div className="flex flex-col items-center">
-            <div className="relative">
-              <Avatar className="w-24 h-24">
-                <AvatarImage src={profile?.avatar_url || undefined} />
-                <AvatarFallback className="text-xl bg-secondary text-foreground">{initials}</AvatarFallback>
-              </Avatar>
-              {isOwnProfile && (
-                <>
-                  <button
-                    onClick={() => fileRef.current?.click()}
-                    disabled={uploading}
-                    className="absolute bottom-0 right-0 p-1.5 rounded-full bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
-                  >
-                    <Camera className="w-3.5 h-3.5" />
-                  </button>
-                  <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={uploadAvatar} />
-                </>
-              )}
-            </div>
-
-            {editing ? (
-              <div className="mt-4 w-full max-w-xs space-y-3">
-                <input
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
-                  placeholder="Display name"
-                  className="w-full px-3 py-2 rounded-lg bg-secondary/50 border border-border text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-                />
-                <textarea
-                  value={bio}
-                  onChange={(e) => setBio(e.target.value)}
-                  placeholder="Bio"
-                  rows={3}
-                  className="w-full px-3 py-2 rounded-lg bg-secondary/50 border border-border text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-primary resize-none"
-                />
-                <div className="flex gap-2 justify-center">
-                  <button onClick={saveProfile} className="p-2 rounded-lg bg-primary text-primary-foreground hover:opacity-90"><Check className="w-4 h-4" /></button>
-                  <button onClick={() => setEditing(false)} className="p-2 rounded-lg bg-secondary text-foreground hover:bg-secondary/80"><X className="w-4 h-4" /></button>
-                </div>
-              </div>
-            ) : (
+        <div className="glass rounded-2xl overflow-hidden">
+          {/* Cover image */}
+          <div className="relative h-36 bg-gradient-to-r from-pulse-blue/20 to-pulse-cyan/20">
+            {(profile as any)?.cover_url && (
+              <img src={(profile as any).cover_url} alt="Cover" className="w-full h-full object-cover" />
+            )}
+            {isOwnProfile && (
               <>
-                <h2 className="mt-4 text-xl font-semibold text-foreground">{profile?.display_name || profile?.username || "Anonymous"}</h2>
-                {profile?.username && <p className="text-sm text-muted-foreground">@{profile.username}</p>}
-                {profile?.bio && <p className="mt-2 text-sm text-muted-foreground text-center max-w-xs">{profile.bio}</p>}
+                <button
+                  onClick={() => coverRef.current?.click()}
+                  disabled={uploadingCover}
+                  className="absolute top-2 right-2 p-2 rounded-full bg-background/60 text-foreground hover:bg-background/80 transition-colors"
+                >
+                  <ImagePlus className="w-4 h-4" />
+                </button>
+                <input ref={coverRef} type="file" accept="image/*" className="hidden" onChange={uploadCover} />
               </>
             )}
           </div>
 
-          {/* Stats */}
-          <div className="flex justify-center gap-8 mt-6 pt-6 border-t border-border/30">
-            {[
-              { label: "Posts", value: stats.posts },
-              { label: "Followers", value: stats.followers },
-              { label: "Following", value: stats.following },
-            ].map((s) => (
-              <div key={s.label} className="text-center">
-                <p className="text-lg font-bold text-foreground">{s.value}</p>
-                <p className="text-xs text-muted-foreground">{s.label}</p>
+          <div className="p-6 -mt-12">
+            {/* Avatar */}
+            <div className="flex flex-col items-center">
+              <div className="relative">
+                <Avatar className="w-24 h-24 border-4 border-background">
+                  <AvatarImage src={profile?.avatar_url || undefined} />
+                  <AvatarFallback className="text-xl bg-secondary text-foreground">{initials}</AvatarFallback>
+                </Avatar>
+                {isOwnProfile && (
+                  <>
+                    <button
+                      onClick={() => fileRef.current?.click()}
+                      disabled={uploading}
+                      className="absolute bottom-0 right-0 p-1.5 rounded-full bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
+                    >
+                      <Camera className="w-3.5 h-3.5" />
+                    </button>
+                    <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={uploadAvatar} />
+                  </>
+                )}
               </div>
-            ))}
-          </div>
 
-          {/* Actions */}
-          <div className="flex justify-center mt-6">
-            {isOwnProfile ? (
-              !editing && (
-                <button onClick={startEdit} className="gradient-border rounded-full px-6 py-2 text-sm font-medium text-foreground hover:bg-secondary/50 transition-colors">
-                  Edit Profile
+              {editing ? (
+                <div className="mt-4 w-full max-w-xs space-y-3">
+                  <input
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    placeholder="Display name"
+                    className="w-full px-3 py-2 rounded-lg bg-secondary/50 border border-border text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                  <textarea
+                    value={bio}
+                    onChange={(e) => setBio(e.target.value)}
+                    placeholder="Bio"
+                    rows={3}
+                    className="w-full px-3 py-2 rounded-lg bg-secondary/50 border border-border text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-primary resize-none"
+                  />
+                  <div className="flex gap-2 justify-center">
+                    <button onClick={saveProfile} className="p-2 rounded-lg bg-primary text-primary-foreground hover:opacity-90"><Check className="w-4 h-4" /></button>
+                    <button onClick={() => setEditing(false)} className="p-2 rounded-lg bg-secondary text-foreground hover:bg-secondary/80"><X className="w-4 h-4" /></button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <h2 className="mt-4 text-xl font-semibold text-foreground">{profile?.display_name || profile?.username || "Anonymous"}</h2>
+                  {profile?.username && <p className="text-sm text-muted-foreground">@{profile.username}</p>}
+                  {profile?.bio && <p className="mt-2 text-sm text-muted-foreground text-center max-w-xs">{profile.bio}</p>}
+                </>
+              )}
+            </div>
+
+            {/* Stats - clickable */}
+            <div className="flex justify-center gap-8 mt-6 pt-6 border-t border-border/30">
+              <div className="text-center">
+                <p className="text-lg font-bold text-foreground">{stats.posts}</p>
+                <p className="text-xs text-muted-foreground">Posts</p>
+              </div>
+              <Link to={`/profile/${targetId}/followers`} className="text-center hover:opacity-80 transition-opacity">
+                <p className="text-lg font-bold text-foreground">{stats.followers}</p>
+                <p className="text-xs text-muted-foreground">Followers</p>
+              </Link>
+              <Link to={`/profile/${targetId}/following`} className="text-center hover:opacity-80 transition-opacity">
+                <p className="text-lg font-bold text-foreground">{stats.following}</p>
+                <p className="text-xs text-muted-foreground">Following</p>
+              </Link>
+            </div>
+
+            {/* Actions */}
+            <div className="flex justify-center mt-6 gap-3">
+              {isOwnProfile ? (
+                !editing && (
+                  <button onClick={startEdit} className="gradient-border rounded-full px-6 py-2 text-sm font-medium text-foreground hover:bg-secondary/50 transition-colors">
+                    Edit Profile
+                  </button>
+                )
+              ) : (
+                <button
+                  onClick={toggleFollow}
+                  disabled={followLoading}
+                  className={`rounded-full px-6 py-2 text-sm font-medium transition-colors ${
+                    isFollowing
+                      ? "bg-secondary text-foreground hover:bg-secondary/80"
+                      : "bg-gradient-to-r from-pulse-blue to-pulse-cyan text-foreground hover:opacity-90"
+                  }`}
+                >
+                  {isFollowing ? "Unfollow" : "Follow"}
                 </button>
-              )
-            ) : (
-              <button
-                onClick={toggleFollow}
-                disabled={followLoading}
-                className={`rounded-full px-6 py-2 text-sm font-medium transition-colors ${
-                  isFollowing
-                    ? "bg-secondary text-foreground hover:bg-secondary/80"
-                    : "bg-gradient-to-r from-pulse-blue to-pulse-cyan text-foreground hover:opacity-90"
-                }`}
-              >
-                {isFollowing ? "Unfollow" : "Follow"}
-              </button>
-            )}
+              )}
+            </div>
           </div>
         </div>
       </main>

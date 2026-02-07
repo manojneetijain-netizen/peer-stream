@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      bookmarks: {
+        Row: {
+          created_at: string
+          id: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       comments: {
         Row: {
           content: string
@@ -96,6 +117,33 @@ export type Database = {
           },
         ]
       }
+      messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          read: boolean
+          receiver_id: string
+          sender_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          read?: boolean
+          receiver_id: string
+          sender_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          read?: boolean
+          receiver_id?: string
+          sender_id?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string
@@ -154,6 +202,7 @@ export type Database = {
         Row: {
           avatar_url: string | null
           bio: string | null
+          cover_url: string | null
           created_at: string
           display_name: string | null
           id: string
@@ -164,6 +213,7 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           bio?: string | null
+          cover_url?: string | null
           created_at?: string
           display_name?: string | null
           id?: string
@@ -174,12 +224,37 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           bio?: string | null
+          cover_url?: string | null
           created_at?: string
           display_name?: string | null
           id?: string
           updated_at?: string
           user_id?: string
           username?: string | null
+        }
+        Relationships: []
+      }
+      reactions: {
+        Row: {
+          created_at: string
+          id: string
+          post_id: string
+          reaction_type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          post_id: string
+          reaction_type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          post_id?: string
+          reaction_type?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -200,6 +275,33 @@ export type Database = {
           created_at?: string
           id?: string
           post_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      stories: {
+        Row: {
+          content: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          image_url: string | null
+          user_id: string
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          image_url?: string | null
+          user_id: string
+        }
+        Update: {
+          content?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          image_url?: string | null
           user_id?: string
         }
         Relationships: []

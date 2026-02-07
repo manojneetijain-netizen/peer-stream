@@ -48,6 +48,50 @@
     --glass-bg: 240 10% 6%;
     --glass-border: 240 10% 16%;
   }
+
+  .light {
+    --background: 0 0% 98%;
+    --foreground: 240 10% 10%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 10%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 10%;
+
+    --primary: 222 100% 50%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 240 5% 92%;
+    --secondary-foreground: 240 10% 10%;
+
+    --muted: 240 5% 94%;
+    --muted-foreground: 240 5% 46%;
+
+    --accent: 190 100% 44%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 240 6% 85%;
+    --input: 240 6% 85%;
+    --ring: 222 100% 50%;
+
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 240 10% 10%;
+    --sidebar-primary: 222 100% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 5% 94%;
+    --sidebar-accent-foreground: 240 10% 10%;
+    --sidebar-border: 240 6% 85%;
+    --sidebar-ring: 222 100% 50%;
+
+    --pulse-blue: 222 100% 50%;
+    --pulse-cyan: 190 100% 44%;
+    --glass-bg: 0 0% 100%;
+    --glass-border: 240 6% 85%;
+  }
 }
 
 @layer base {
@@ -85,10 +129,10 @@
   }
 
   .glass {
-    background: hsl(240 10% 6% / 0.6);
+    background: hsl(var(--glass-bg) / 0.6);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border: 1px solid hsl(240 10% 16% / 0.4);
+    border: 1px solid hsl(var(--glass-border) / 0.4);
   }
 
   .glow-blue {

@@ -6,7 +6,11 @@ import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
 import CreatePost from "@/components/feed/CreatePost";
 import PostCard from "@/components/feed/PostCard";
 import UserSearch from "@/components/feed/UserSearch";
-import { LogOut, User, Compass, Users, Loader2 } from "lucide-react";
+import StoriesBar from "@/components/feed/StoriesBar";
+import NotificationBell from "@/components/feed/NotificationBell";
+import MessagesPage from "@/components/feed/MessagesPage";
+import { LogOut, User, Compass, Users, Loader2, MessageCircle, Bookmark, Sun, Moon } from "lucide-react";
+import { useTheme } from "@/hooks/useTheme";
 
 type FeedTab = "following" | "discover";
 
@@ -15,16 +19,43 @@ const Feed = () => {
   const [tab, setTab] = useState<FeedTab>("discover");
   const { posts, loading: feedLoading, loadingMore, hasMore, loadMore, refetch } = useFeed(user?.id, tab);
   const sentinelRef = useInfiniteScroll(loadMore, hasMore && !loadingMore);
+  const [showMessages, setShowMessages] = useState(false);
+  const { theme, toggleTheme } = useTheme();
 
   if (loading) return null;
   if (!user) return <Navigate to="/auth" replace />;
+
+  if (showMessages) {
+    return (
+      <div className="min-h-screen bg-background">
+        <header className="sticky top-0 z-50 glass border-b border-border/30">
+          <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
+            <span className="text-lg font-bold gradient-text">Pulse</span>
+          </div>
+        </header>
+        <main className="max-w-2xl mx-auto">
+          <MessagesPage currentUserId={user.id} onBack={() => setShowMessages(false)} />
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-50 glass border-b border-border/30">
         <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
           <span className="text-lg font-bold gradient-text">Pulse</span>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-0.5">
+            <button onClick={toggleTheme} className="p-2 rounded-lg hover:bg-secondary/50 transition-colors text-muted-foreground hover:text-foreground">
+              {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </button>
+            <NotificationBell currentUserId={user.id} />
+            <button onClick={() => setShowMessages(true)} className="p-2 rounded-lg hover:bg-secondary/50 transition-colors text-muted-foreground hover:text-foreground">
+              <MessageCircle className="w-4 h-4" />
+            </button>
+            <Link to="/bookmarks" className="p-2 rounded-lg hover:bg-secondary/50 transition-colors text-muted-foreground hover:text-foreground">
+              <Bookmark className="w-4 h-4" />
+            </Link>
             <Link to={`/profile/${user.id}`} className="p-2 rounded-lg hover:bg-secondary/50 transition-colors text-muted-foreground hover:text-foreground">
               <User className="w-4 h-4" />
             </Link>
@@ -36,6 +67,7 @@ const Feed = () => {
       </header>
 
       <main className="max-w-2xl mx-auto px-4 py-6 space-y-4">
+        <StoriesBar currentUserId={user.id} />
         <UserSearch />
         <CreatePost userId={user.id} onCreated={refetch} />
 

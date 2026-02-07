@@ -1,12 +1,29 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import Navbar from "@/components/landing/Navbar";
+import HeroSection from "@/components/landing/HeroSection";
+import ArchitectureSection from "@/components/landing/ArchitectureSection";
+import RealTimeSection from "@/components/landing/RealTimeSection";
+import AISection from "@/components/landing/AISection";
+import SecuritySection from "@/components/landing/SecuritySection";
+import CTASection from "@/components/landing/CTASection";
 
 const Index = () => {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
-      </div>
+    <div className="min-h-screen bg-background">
+      <Navbar />
+      <HeroSection />
+      <ArchitectureSection />
+      <RealTimeSection />
+      <AISection />
+      <SecuritySection />
+      <CTASection />
+
+      {/* Footer */}
+      <footer className="border-t border-border/30 py-8">
+        <div className="max-w-7xl mx-auto px-6 flex items-center justify-between text-sm text-muted-foreground">
+          <span className="gradient-text font-bold">Pulse</span>
+          <span>© 2026 Pulse. All rights reserved.</span>
+        </div>
+      </footer>
     </div>
   );
 };

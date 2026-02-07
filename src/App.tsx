@@ -14,6 +14,8 @@ import HashtagPage from "./pages/HashtagPage";
 import TrendingPage from "./pages/TrendingPage";
 import Analytics from "./pages/Analytics";
 import NotificationSettings from "./pages/NotificationSettings";
+import UserLists from "./pages/UserLists";
+import ExplorePage from "./pages/ExplorePage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -37,6 +39,8 @@ const App = () => (
             <Route path="/trending" element={<TrendingPage />} />
             <Route path="/analytics" element={<Analytics />} />
             <Route path="/settings/notifications" element={<NotificationSettings />} />
+            <Route path="/lists" element={<UserLists />} />
+            <Route path="/explore" element={<ExplorePage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

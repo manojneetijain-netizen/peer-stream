@@ -5,6 +5,7 @@ import { extractHashtags } from "./HashtagRenderer";
 import PollCreator from "./PollCreator";
 import PostScheduler from "./PostScheduler";
 import DraftManager from "./DraftManager";
+import VideoUploader from "./VideoUploader";
 import { toast } from "sonner";
 
 interface CreatePostProps {
@@ -20,6 +21,8 @@ const CreatePost = ({ userId, onCreated }: CreatePostProps) => {
   const [pollData, setPollData] = useState<{ question: string; options: string[] } | null>(null);
   const [scheduledAt, setScheduledAt] = useState<Date | null>(null);
   const [showDrafts, setShowDrafts] = useState(false);
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [videoPreview, setVideoPreview] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const handleImages = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -59,7 +62,18 @@ const CreatePost = ({ userId, onCreated }: CreatePostProps) => {
   };
 
   const handleSubmit = async () => {
-    if (!content.trim() && imageFiles.length === 0) return;
+    if (!content.trim() && imageFiles.length === 0 && !videoFile) return;
+    setSubmitting(true);
+
+    // Upload video if present
+    let videoUrl: string | null = null;
+    if (videoFile) {
+      const ext = videoFile.name.split(".").pop();
+      const path = `${userId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      await supabase.storage.from("post-videos").upload(path, videoFile);
+      const { data: { publicUrl } } = supabase.storage.from("post-videos").getPublicUrl(path);
+      videoUrl = publicUrl;
+    }
     setSubmitting(true);
 
     // Upload images
@@ -73,16 +87,17 @@ const CreatePost = ({ userId, onCreated }: CreatePostProps) => {
     }
 
     // Create post
-    const { data: post } = await supabase
+    const { data: post } = await (supabase
       .from("posts")
       .insert({
         user_id: userId,
         content: content.trim(),
         image_url: uploadedUrls[0] || null,
+        video_url: videoUrl,
         scheduled_at: scheduledAt?.toISOString() || null,
-      })
+      } as any)
       .select("id")
-      .single();
+      .single()) as { data: { id: string } | null };
 
     if (post && uploadedUrls.length > 0) {
       const imageRows = uploadedUrls.map((url, i) => ({
@@ -148,6 +163,8 @@ const CreatePost = ({ userId, onCreated }: CreatePostProps) => {
     removeAllImages();
     setPollData(null);
     setScheduledAt(null);
+    setVideoFile(null);
+    setVideoPreview(null);
     setSubmitting(false);
     onCreated();
   };
@@ -192,6 +209,10 @@ const CreatePost = ({ userId, onCreated }: CreatePostProps) => {
           </button>
           <PollCreator onPollChange={setPollData} />
           <PostScheduler onSchedule={setScheduledAt} />
+          <VideoUploader
+            onVideoSelected={(f) => { setVideoFile(f); setVideoPreview(f ? URL.createObjectURL(f) : null); }}
+            preview={videoPreview}
+          />
           <button
             onClick={saveDraft}
             disabled={!content.trim()}
@@ -214,7 +235,7 @@ const CreatePost = ({ userId, onCreated }: CreatePostProps) => {
         <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={handleImages} />
         <button
           onClick={handleSubmit}
-          disabled={submitting || (!content.trim() && imageFiles.length === 0)}
+          disabled={submitting || (!content.trim() && imageFiles.length === 0 && !videoFile)}
           className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-pulse-blue to-pulse-cyan text-foreground text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
         >
           <Send className="w-4 h-4" />

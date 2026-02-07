@@ -569,6 +569,7 @@ export type Database = {
           quoted_post_id: string | null
           scheduled_at: string | null
           user_id: string
+          video_url: string | null
         }
         Insert: {
           content: string
@@ -578,6 +579,7 @@ export type Database = {
           quoted_post_id?: string | null
           scheduled_at?: string | null
           user_id: string
+          video_url?: string | null
         }
         Update: {
           content?: string
@@ -587,6 +589,7 @@ export type Database = {
           quoted_post_id?: string | null
           scheduled_at?: string | null
           user_id?: string
+          video_url?: string | null
         }
         Relationships: [
           {
@@ -740,6 +743,59 @@ export type Database = {
           expires_at?: string
           id?: string
           image_url?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_list_members: {
+        Row: {
+          created_at: string
+          id: string
+          list_id: string
+          member_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          list_id: string
+          member_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          list_id?: string
+          member_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_list_members_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "user_lists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_lists: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
           user_id?: string
         }
         Relationships: []

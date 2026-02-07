@@ -6,6 +6,7 @@ import { useFeed } from "@/hooks/useFeed";
 import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
 import { useBlockMute } from "@/hooks/useBlockMute";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
+import { usePresence } from "@/hooks/usePresence";
 import { supabase } from "@/integrations/supabase/client";
 import CreatePost from "@/components/feed/CreatePost";
 import PostCard from "@/components/feed/PostCard";
@@ -27,6 +28,7 @@ const Feed = () => {
   const [showMessages, setShowMessages] = useState(false);
   const { isBlocked, isMuted, blockUser, unblockUser, muteUser, unmuteUser } = useBlockMute(user?.id);
   const [profile, setProfile] = useState<any>(null);
+  const { isOnline, isTypingTo, setTyping } = usePresence(user?.id);
 
   usePushNotifications(user?.id);
 
@@ -50,7 +52,7 @@ const Feed = () => {
       <div className="min-h-screen bg-background flex">
         <FeedSidebar currentUserId={user.id} onMessagesClick={() => setShowMessages(false)} profile={profile} />
         <main className="flex-1 max-w-2xl mx-auto">
-          <MessagesPage currentUserId={user.id} onBack={() => setShowMessages(false)} />
+          <MessagesPage currentUserId={user.id} onBack={() => setShowMessages(false)} isOnline={isOnline} isTypingTo={isTypingTo} setTyping={setTyping} />
         </main>
       </div>
     );

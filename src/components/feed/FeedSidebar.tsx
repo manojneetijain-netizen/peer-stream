@@ -1,11 +1,11 @@
 import { Link, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
-import { useTheme } from "@/hooks/useTheme";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import ThemeToggle from "@/components/feed/ThemeToggle";
 import {
   Home, Compass, Bookmark, MessageCircle, Bell, Settings,
-  User, List, LogOut, Sun, Moon, TrendingUp,
+  User, List, LogOut, TrendingUp,
 } from "lucide-react";
 
 interface FeedSidebarProps {
@@ -20,13 +20,12 @@ const navItems = [
   { label: "Trending", icon: TrendingUp, path: "/trending" },
   { label: "Bookmarks", icon: Bookmark, path: "/bookmarks" },
   { label: "Lists", icon: List, path: "/lists" },
-  { label: "Settings", icon: Settings, path: "/settings/notifications" },
+  { label: "Settings", icon: Settings, path: "/settings" },
 ];
 
 const FeedSidebar = ({ currentUserId, onMessagesClick, profile }: FeedSidebarProps) => {
   const location = useLocation();
   const { signOut } = useAuth();
-  const { theme, toggleTheme } = useTheme();
 
   const initials = (profile?.display_name || profile?.username || "?").slice(0, 2).toUpperCase();
 
@@ -80,13 +79,7 @@ const FeedSidebar = ({ currentUserId, onMessagesClick, profile }: FeedSidebarPro
       </nav>
 
       {/* Theme toggle */}
-      <button
-        onClick={toggleTheme}
-        className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-all duration-200 mb-2"
-      >
-        {theme === "dark" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-        {theme === "dark" ? "Light mode" : "Dark mode"}
-      </button>
+      <ThemeToggle className="mb-2" />
 
       {/* User profile card */}
       <div className="glass rounded-2xl p-3 flex items-center gap-3">

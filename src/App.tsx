@@ -18,6 +18,7 @@ import Analytics from "./pages/Analytics";
 import NotificationSettings from "./pages/NotificationSettings";
 import UserLists from "./pages/UserLists";
 import ExplorePage from "./pages/ExplorePage";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -39,6 +40,7 @@ const AnimatedRoutes = () => {
         <Route path="/trending" element={<PageTransition><TrendingPage /></PageTransition>} />
         <Route path="/analytics" element={<PageTransition><Analytics /></PageTransition>} />
         <Route path="/settings/notifications" element={<PageTransition><NotificationSettings /></PageTransition>} />
+        <Route path="/settings" element={<PageTransition><Settings /></PageTransition>} />
         <Route path="/lists" element={<PageTransition><UserLists /></PageTransition>} />
         <Route path="/explore" element={<PageTransition><ExplorePage /></PageTransition>} />
         <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />

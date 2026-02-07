@@ -206,6 +206,9 @@ const PostCard = ({ post, currentUserId, onUpdate, isBlocked, isMuted, onBlock, 
       {/* Content */}
       {post.content && <HashtagRenderer content={post.content} />}
       {images.length > 0 && <ImageCarousel images={images} />}
+      {(post as any).video_url && (
+        <video src={(post as any).video_url} controls className="mt-3 w-full rounded-xl max-h-96 object-cover" />
+      )}
       <PollDisplay postId={post.id} currentUserId={currentUserId} />
       {(post as any).quoted_post_id && <QuotedPostCard quotedPostId={(post as any).quoted_post_id} />}
 

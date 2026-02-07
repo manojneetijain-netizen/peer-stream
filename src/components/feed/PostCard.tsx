@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Heart, MessageCircle } from "lucide-react";
+import { Heart, MessageCircle, Trash2 } from "lucide-react";
 import type { PostWithDetails } from "@/hooks/useFeed";
 import CommentsSection from "./CommentsSection";
 
@@ -16,6 +16,9 @@ const PostCard = ({ post, currentUserId, onUpdate }: PostCardProps) => {
   const [liked, setLiked] = useState(post.liked_by_me);
   const [likesCount, setLikesCount] = useState(post.likes_count);
   const [showComments, setShowComments] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const isOwner = post.user_id === currentUserId;
 
   const toggleLike = async () => {
     if (liked) {
@@ -27,6 +30,15 @@ const PostCard = ({ post, currentUserId, onUpdate }: PostCardProps) => {
       setLiked(true);
       setLikesCount((c) => c + 1);
     }
+  };
+
+  const deletePost = async () => {
+    if (!confirm("Delete this post?")) return;
+    setDeleting(true);
+    await supabase.from("likes").delete().eq("post_id", post.id);
+    await supabase.from("comments").delete().eq("post_id", post.id);
+    await supabase.from("posts").delete().eq("id", post.id);
+    onUpdate();
   };
 
   const timeAgo = (dateStr: string) => {
@@ -43,7 +55,7 @@ const PostCard = ({ post, currentUserId, onUpdate }: PostCardProps) => {
   const initials = (post.author.display_name || post.author.username || "?").slice(0, 2).toUpperCase();
 
   return (
-    <div className="glass rounded-2xl p-4">
+    <div className={`glass rounded-2xl p-4 ${deleting ? "opacity-50 pointer-events-none" : ""}`}>
       {/* Header */}
       <div className="flex items-center gap-3">
         <Link to={`/profile/${post.user_id}`}>
@@ -61,6 +73,15 @@ const PostCard = ({ post, currentUserId, onUpdate }: PostCardProps) => {
           )}
         </div>
         <span className="text-xs text-muted-foreground">{timeAgo(post.created_at)}</span>
+        {isOwner && (
+          <button
+            onClick={deletePost}
+            className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+            title="Delete post"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+        )}
       </div>
 
       {/* Content */}

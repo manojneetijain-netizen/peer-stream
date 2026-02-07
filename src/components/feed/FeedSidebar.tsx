@@ -1,11 +1,13 @@
+import { useState, useEffect, useCallback } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import ThemeToggle from "@/components/feed/ThemeToggle";
+import { supabase } from "@/integrations/supabase/client";
 import {
-  Home, Compass, Bookmark, MessageCircle, Bell,
-  User, List, LogOut, TrendingUp,
+  Home, Compass, Bookmark, MessageCircle,
+  List, LogOut, TrendingUp,
 } from "lucide-react";
 
 interface FeedSidebarProps {
@@ -25,6 +27,29 @@ const navItems = [
 const FeedSidebar = ({ currentUserId, onMessagesClick, profile }: FeedSidebarProps) => {
   const location = useLocation();
   const { signOut } = useAuth();
+  const [unreadMessages, setUnreadMessages] = useState(0);
+
+  const fetchUnread = useCallback(async () => {
+    if (!currentUserId) return;
+    const { count } = await supabase
+      .from("messages")
+      .select("id", { count: "exact", head: true })
+      .eq("receiver_id", currentUserId)
+      .eq("read", false);
+    setUnreadMessages(count ?? 0);
+  }, [currentUserId]);
+
+  useEffect(() => {
+    fetchUnread();
+    if (!currentUserId) return;
+    const channel = supabase
+      .channel("sidebar-unread")
+      .on("postgres_changes", { event: "*", schema: "public", table: "messages", filter: `receiver_id=eq.${currentUserId}` }, () => {
+        fetchUnread();
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [fetchUnread, currentUserId]);
 
   const initials = (profile?.display_name || profile?.username || "?").slice(0, 2).toUpperCase();
 
@@ -71,7 +96,18 @@ const FeedSidebar = ({ currentUserId, onMessagesClick, profile }: FeedSidebarPro
             onClick={onMessagesClick}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-all duration-200 group"
           >
-            <MessageCircle className="w-5 h-5 transition-transform duration-200 group-hover:scale-110" />
+            <div className="relative">
+              <MessageCircle className="w-5 h-5 transition-transform duration-200 group-hover:scale-110" />
+              {unreadMessages > 0 && (
+                <motion.span
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  className="absolute -top-1.5 -right-2 min-w-[16px] h-4 px-1 rounded-full bg-destructive text-destructive-foreground text-[9px] font-bold flex items-center justify-center"
+                >
+                  {unreadMessages > 99 ? "99+" : unreadMessages}
+                </motion.span>
+              )}
+            </div>
             Messages
           </button>
         </motion.div>

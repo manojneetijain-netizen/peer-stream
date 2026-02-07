@@ -52,11 +52,13 @@ const MessagesPage = ({ currentUserId, onBack, isOnline, isTypingTo, setTyping }
   } | null>(null);
 
   const fetchConversations = useCallback(async () => {
-    const { data: allMessages } = await supabase
+    const { data: allMessages, error } = await supabase
       .from("messages")
       .select("*")
       .or(`sender_id.eq.${currentUserId},receiver_id.eq.${currentUserId}`)
       .order("created_at", { ascending: false });
+
+    console.log("fetchConversations:", { allMessages, error, currentUserId });
 
     if (!allMessages || allMessages.length === 0) { setConversations([]); return; }
 
@@ -92,7 +94,20 @@ const MessagesPage = ({ currentUserId, onBack, isOnline, isTypingTo, setTyping }
     setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
   }, [currentUserId]);
 
-  useEffect(() => { fetchConversations(); }, [fetchConversations]);
+  useEffect(() => {
+    fetchConversations();
+    // Also refresh conversations list in real-time
+    const channel = supabase
+      .channel("conversations-list")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, (payload) => {
+        const msg = payload.new as Message;
+        if (msg.sender_id === currentUserId || msg.receiver_id === currentUserId) {
+          fetchConversations();
+        }
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [fetchConversations, currentUserId]);
 
   useEffect(() => {
     if (!selectedUser) return;

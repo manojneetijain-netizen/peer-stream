@@ -8,6 +8,8 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Feed from "./pages/Feed";
 import Profile from "./pages/Profile";
+import FollowList from "./pages/FollowList";
+import Bookmarks from "./pages/Bookmarks";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,6 +26,9 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/feed" element={<Feed />} />
             <Route path="/profile/:userId" element={<Profile />} />
+            <Route path="/profile/:userId/followers" element={<FollowList />} />
+            <Route path="/profile/:userId/following" element={<FollowList />} />
+            <Route path="/bookmarks" element={<Bookmarks />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

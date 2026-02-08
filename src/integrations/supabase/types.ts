@@ -568,6 +568,7 @@ export type Database = {
           image_url: string | null
           quoted_post_id: string | null
           scheduled_at: string | null
+          type: string
           user_id: string
           video_url: string | null
         }
@@ -578,6 +579,7 @@ export type Database = {
           image_url?: string | null
           quoted_post_id?: string | null
           scheduled_at?: string | null
+          type?: string
           user_id: string
           video_url?: string | null
         }
@@ -588,6 +590,7 @@ export type Database = {
           image_url?: string | null
           quoted_post_id?: string | null
           scheduled_at?: string | null
+          type?: string
           user_id?: string
           video_url?: string | null
         }

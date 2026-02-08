@@ -17,21 +17,29 @@ interface StoriesBarProps {
   currentUserId: string;
 }
 
-const PHOTO_DURATION = 10000; // 10 seconds
+const PHOTO_DURATION = 10000;
 
-const StoryViewer = ({ story, onClose }: { story: Story; onClose: () => void }) => {
+const StoryViewer = ({ stories, onClose }: { stories: Story[]; onClose: () => void }) => {
+  const [index, setIndex] = useState(0);
   const [progress, setProgress] = useState(0);
   const [fading, setFading] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const timerRef = useRef<ReturnType<typeof setInterval>>();
+
+  const story = stories[index];
   const isVideo = story.image_url?.match(/\.(mp4|webm|mov)$/i);
 
-  const dismiss = useCallback(() => {
-    setFading(true);
-    setTimeout(onClose, 400);
-  }, [onClose]);
+  const goNext = useCallback(() => {
+    if (index < stories.length - 1) {
+      setIndex((i) => i + 1);
+      setProgress(0);
+    } else {
+      setFading(true);
+      setTimeout(onClose, 400);
+    }
+  }, [index, stories.length, onClose]);
 
-  // Photo timer
+  // Photo timer — reset on index change
   useEffect(() => {
     if (isVideo) return;
     const start = Date.now();
@@ -40,14 +48,13 @@ const StoryViewer = ({ story, onClose }: { story: Story; onClose: () => void }) 
       setProgress(Math.min(elapsed / PHOTO_DURATION, 1));
       if (elapsed >= PHOTO_DURATION) {
         clearInterval(timerRef.current);
-        dismiss();
+        goNext();
       }
     }, 50);
     return () => clearInterval(timerRef.current);
-  }, [isVideo, dismiss]);
+  }, [isVideo, index, goNext]);
 
-  // Video end handler
-  const handleVideoEnd = () => dismiss();
+  const handleVideoEnd = () => goNext();
 
   const handleVideoTimeUpdate = () => {
     const v = videoRef.current;
@@ -63,60 +70,79 @@ const StoryViewer = ({ story, onClose }: { story: Story; onClose: () => void }) 
           exit={{ opacity: 0 }}
           transition={{ duration: 0.4 }}
           className="fixed inset-0 z-[100] bg-background/95 flex items-center justify-center"
-          onClick={dismiss}
+          onClick={() => { setFading(true); setTimeout(onClose, 400); }}
         >
-          <div className="max-w-sm w-full mx-4 relative" onClick={(e) => e.stopPropagation()}>
-            {/* Progress bar */}
-            <div className="absolute top-0 left-0 right-0 z-20 px-3 pt-2">
-              <div className="h-0.5 w-full bg-secondary/40 rounded-full overflow-hidden">
-                <motion.div
-                  className="h-full bg-primary rounded-full"
-                  style={{ width: `${progress * 100}%` }}
-                  transition={{ duration: 0.05 }}
-                />
-              </div>
+          <div className="max-w-lg w-full mx-4 relative" onClick={(e) => e.stopPropagation()}>
+            {/* Segmented progress bars */}
+            <div className="absolute top-0 left-0 right-0 z-20 px-3 pt-2 flex gap-1">
+              {stories.map((_, i) => (
+                <div key={i} className="flex-1 h-0.5 bg-secondary/40 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-primary rounded-full transition-all duration-100"
+                    style={{
+                      width: i < index ? "100%" : i === index ? `${progress * 100}%` : "0%",
+                    }}
+                  />
+                </div>
+              ))}
             </div>
 
-            <button onClick={dismiss} className="absolute top-4 right-2 z-20 p-2 rounded-full bg-background/50 text-foreground">
+            <button
+              onClick={() => { setFading(true); setTimeout(onClose, 400); }}
+              className="absolute top-4 right-2 z-20 p-2 rounded-full bg-background/50 text-foreground"
+            >
               <X className="w-5 h-5" />
             </button>
 
-            <div className="glass rounded-2xl overflow-hidden">
-              <div className="flex items-center gap-2 p-3">
-                <Avatar className="w-8 h-8">
-                  <AvatarImage src={story.author.avatar_url || undefined} />
-                  <AvatarFallback className="bg-secondary text-foreground text-xs">
-                    {(story.author.display_name || "?").slice(0, 2).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <span className="text-sm font-medium text-foreground">
-                  {story.author.display_name || story.author.username}
-                </span>
-              </div>
-
-              {story.image_url && (
-                isVideo ? (
-                  <video
-                    ref={videoRef}
-                    src={story.image_url}
-                    autoPlay
-                    playsInline
-                    muted
-                    onEnded={handleVideoEnd}
-                    onTimeUpdate={handleVideoTimeUpdate}
-                    className="w-full aspect-[9/16] object-cover max-h-[70vh]"
-                  />
-                ) : (
-                  <img src={story.image_url} alt="Story" className="w-full aspect-[9/16] object-cover max-h-[70vh]" />
-                )
-              )}
-
-              {story.content && (
-                <div className={`p-6 ${!story.image_url ? "min-h-[300px] flex items-center justify-center" : ""}`}>
-                  <p className="text-foreground text-center text-lg">{story.content}</p>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={story.id}
+                initial={{ opacity: 0, scale: 0.97 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.97 }}
+                transition={{ duration: 0.25 }}
+                className="glass rounded-2xl overflow-hidden"
+              >
+                <div className="flex items-center gap-2 p-3">
+                  <Avatar className="w-8 h-8">
+                    <AvatarImage src={story.author.avatar_url || undefined} />
+                    <AvatarFallback className="bg-secondary text-foreground text-xs">
+                      {(story.author.display_name || "?").slice(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="text-sm font-medium text-foreground">
+                    {story.author.display_name || story.author.username}
+                  </span>
+                  <span className="text-xs text-muted-foreground ml-auto">
+                    {index + 1}/{stories.length}
+                  </span>
                 </div>
-              )}
-            </div>
+
+                {story.image_url && (
+                  isVideo ? (
+                    <video
+                      ref={videoRef}
+                      key={story.id}
+                      src={story.image_url}
+                      autoPlay
+                      playsInline
+                      muted
+                      onEnded={handleVideoEnd}
+                      onTimeUpdate={handleVideoTimeUpdate}
+                      className="w-full max-h-[80vh] object-contain bg-black/20"
+                    />
+                  ) : (
+                    <img src={story.image_url} alt="Story" className="w-full aspect-[9/16] object-cover max-h-[70vh]" />
+                  )
+                )}
+
+                {story.content && (
+                  <div className={`p-6 ${!story.image_url ? "min-h-[300px] flex items-center justify-center" : ""}`}>
+                    <p className="text-foreground text-center text-lg">{story.content}</p>
+                  </div>
+                )}
+              </motion.div>
+            </AnimatePresence>
           </div>
         </motion.div>
       )}
@@ -126,7 +152,7 @@ const StoryViewer = ({ story, onClose }: { story: Story; onClose: () => void }) 
 
 const StoriesBar = ({ currentUserId }: StoriesBarProps) => {
   const [stories, setStories] = useState<Story[]>([]);
-  const [viewingStory, setViewingStory] = useState<Story | null>(null);
+  const [viewingStories, setViewingStories] = useState<Story[] | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [content, setContent] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -139,7 +165,7 @@ const StoriesBar = ({ currentUserId }: StoriesBarProps) => {
       .from("stories")
       .select("*")
       .gte("expires_at", new Date().toISOString())
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: true });
 
     if (!data || data.length === 0) { setStories([]); return; }
 
@@ -216,7 +242,7 @@ const StoriesBar = ({ currentUserId }: StoriesBarProps) => {
           const first = userStoryList[0];
           const initials = (first.author.display_name || first.author.username || "?").slice(0, 2).toUpperCase();
           return (
-            <button key={userId} onClick={() => setViewingStory(first)} className="flex flex-col items-center gap-1 flex-shrink-0">
+            <button key={userId} onClick={() => setViewingStories(userStoryList)} className="flex flex-col items-center gap-1 flex-shrink-0">
               <div className="w-16 h-16 rounded-full p-[2px] bg-gradient-to-tr from-pulse-blue to-pulse-cyan">
                 <Avatar className="w-full h-full border-2 border-background">
                   <AvatarImage src={first.author.avatar_url || undefined} />
@@ -231,12 +257,10 @@ const StoriesBar = ({ currentUserId }: StoriesBarProps) => {
         })}
       </div>
 
-      {/* Story viewer with auto-fade */}
-      {viewingStory && (
-        <StoryViewer story={viewingStory} onClose={() => setViewingStory(null)} />
+      {viewingStories && (
+        <StoryViewer stories={viewingStories} onClose={() => setViewingStories(null)} />
       )}
 
-      {/* Create story modal */}
       {showCreate && (
         <div className="fixed inset-0 z-[100] bg-background/95 flex items-center justify-center" onClick={() => setShowCreate(false)}>
           <div className="max-w-sm w-full mx-4 glass rounded-2xl p-4 space-y-3" onClick={(e) => e.stopPropagation()}>
@@ -263,7 +287,7 @@ const StoriesBar = ({ currentUserId }: StoriesBarProps) => {
               <button onClick={() => fileRef.current?.click()} className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/50">
                 <Camera className="w-5 h-5" />
               </button>
-              <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => {
+              <input ref={fileRef} type="file" accept="image/*,video/*" className="hidden" onChange={(e) => {
                 const file = e.target.files?.[0];
                 if (file) { setImageFile(file); setImagePreview(URL.createObjectURL(file)); }
               }} />

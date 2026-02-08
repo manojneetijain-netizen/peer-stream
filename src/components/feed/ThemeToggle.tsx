@@ -17,12 +17,12 @@ const ThemeToggle = ({ showLabel = true, className = "" }: ThemeToggleProps) => 
   const { theme, setTheme } = useTheme();
 
   return (
-    <div className={`flex items-center gap-1 p-1 rounded-xl bg-secondary/40 border border-border/30 ${className}`}>
+    <div className={`flex items-center gap-0.5 sm:gap-1 p-0.5 sm:p-1 rounded-xl bg-secondary/40 border border-border/30 ${className}`}>
       {themes.map(({ key, icon: Icon, label }) => (
         <button
           key={key}
           onClick={() => setTheme(key)}
-          className={`relative flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200 ${
+          className={`relative flex items-center justify-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200 ${
             theme === key
               ? "text-foreground"
               : "text-muted-foreground hover:text-foreground"
@@ -35,8 +35,8 @@ const ThemeToggle = ({ showLabel = true, className = "" }: ThemeToggleProps) => 
               transition={{ type: "spring", bounce: 0.15, duration: 0.4 }}
             />
           )}
-          <Icon className={`w-3.5 h-3.5 relative z-10 ${theme === key ? "text-primary" : ""}`} />
-          {showLabel && <span className="relative z-10">{label}</span>}
+          <Icon className={`w-3.5 h-3.5 relative z-10 shrink-0 ${theme === key ? "text-primary" : ""}`} />
+          {showLabel && <span className="relative z-10 hidden sm:inline">{label}</span>}
         </button>
       ))}
     </div>

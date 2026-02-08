@@ -96,6 +96,52 @@
     --glass-blur: 24px;
     --glass-opacity: 0.72;
   }
+
+  .warm {
+    --background: 30 18% 90%;
+    --foreground: 25 20% 18%;
+
+    --card: 30 16% 93%;
+    --card-foreground: 25 20% 18%;
+
+    --popover: 30 16% 93%;
+    --popover-foreground: 25 20% 18%;
+
+    --primary: 25 75% 42%;
+    --primary-foreground: 40 30% 96%;
+
+    --secondary: 30 14% 86%;
+    --secondary-foreground: 25 20% 18%;
+
+    --muted: 30 14% 88%;
+    --muted-foreground: 25 12% 44%;
+
+    --accent: 165 50% 35%;
+    --accent-foreground: 40 30% 96%;
+
+    --destructive: 5 65% 48%;
+    --destructive-foreground: 40 30% 96%;
+
+    --border: 30 14% 80%;
+    --input: 30 14% 82%;
+    --ring: 25 75% 42%;
+
+    --sidebar-background: 30 16% 92%;
+    --sidebar-foreground: 25 20% 18%;
+    --sidebar-primary: 25 75% 42%;
+    --sidebar-primary-foreground: 40 30% 96%;
+    --sidebar-accent: 30 14% 88%;
+    --sidebar-accent-foreground: 25 20% 18%;
+    --sidebar-border: 30 14% 80%;
+    --sidebar-ring: 25 75% 42%;
+
+    --pulse-blue: 25 75% 42%;
+    --pulse-cyan: 165 50% 35%;
+    --glass-bg: 30 16% 94%;
+    --glass-border: 30 14% 78%;
+    --glass-blur: 24px;
+    --glass-opacity: 0.72;
+  }
 }
 
 @layer base {

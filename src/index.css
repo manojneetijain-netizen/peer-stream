@@ -52,49 +52,49 @@
   }
 
   .light {
-    --background: 220 20% 97%;
-    --foreground: 240 10% 10%;
+    --background: 220 14% 92%;
+    --foreground: 220 15% 20%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 10%;
+    --card: 220 14% 95%;
+    --card-foreground: 220 15% 20%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 10%;
+    --popover: 220 14% 95%;
+    --popover-foreground: 220 15% 20%;
 
-    --primary: 222 100% 50%;
+    --primary: 222 80% 45%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 14% 92%;
-    --secondary-foreground: 240 10% 10%;
+    --secondary: 220 12% 88%;
+    --secondary-foreground: 220 15% 20%;
 
-    --muted: 220 14% 94%;
-    --muted-foreground: 220 8% 46%;
+    --muted: 220 12% 90%;
+    --muted-foreground: 220 10% 42%;
 
-    --accent: 190 100% 44%;
+    --accent: 190 70% 38%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84% 60%;
+    --destructive: 0 70% 52%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 13% 87%;
-    --input: 220 13% 87%;
-    --ring: 222 100% 50%;
+    --border: 220 12% 82%;
+    --input: 220 12% 84%;
+    --ring: 222 80% 45%;
 
-    --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 240 10% 10%;
-    --sidebar-primary: 222 100% 50%;
+    --sidebar-background: 220 14% 94%;
+    --sidebar-foreground: 220 15% 20%;
+    --sidebar-primary: 222 80% 45%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 14% 94%;
-    --sidebar-accent-foreground: 240 10% 10%;
-    --sidebar-border: 220 13% 87%;
-    --sidebar-ring: 222 100% 50%;
+    --sidebar-accent: 220 12% 90%;
+    --sidebar-accent-foreground: 220 15% 20%;
+    --sidebar-border: 220 12% 82%;
+    --sidebar-ring: 222 80% 45%;
 
-    --pulse-blue: 222 100% 50%;
-    --pulse-cyan: 190 100% 44%;
-    --glass-bg: 0 0% 100%;
-    --glass-border: 220 13% 90%;
+    --pulse-blue: 222 80% 45%;
+    --pulse-cyan: 190 70% 38%;
+    --glass-bg: 220 14% 96%;
+    --glass-border: 220 12% 80%;
     --glass-blur: 24px;
-    --glass-opacity: 0.65;
+    --glass-opacity: 0.72;
   }
 }
 

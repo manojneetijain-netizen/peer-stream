@@ -152,7 +152,7 @@ const PostCard = ({ post, currentUserId, onUpdate, isBlocked, isMuted, onBlock, 
   const initials = (post.author.display_name || post.author.username || "?").slice(0, 2).toUpperCase();
 
   return (
-    <div className={`glass rounded-2xl p-4 ${deleting ? "opacity-50 pointer-events-none" : ""}`}>
+    <div className={`glass-card rounded-2xl p-4 ${deleting ? "opacity-50 pointer-events-none" : ""}`}>
       {isPinned && (
         <div className="flex items-center gap-1 text-xs text-accent mb-2">
           <Pin className="w-3 h-3" /> Pinned post

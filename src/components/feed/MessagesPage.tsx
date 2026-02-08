@@ -5,7 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import OnlineIndicator from "./OnlineIndicator";
 import TypingIndicator from "./TypingIndicator";
-import { Send, ArrowLeft, PenSquare, Search, X } from "lucide-react";
+import { Send, ArrowLeft, PenSquare, Search, X, Trash2, MoreVertical } from "lucide-react";
+import { toast } from "sonner";
 
 interface Conversation {
   user_id: string;
@@ -43,6 +44,8 @@ const MessagesPage = ({ currentUserId, onBack, isOnline, isTypingTo, setTyping }
   const [showNewMessage, setShowNewMessage] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [showChatMenu, setShowChatMenu] = useState(false);
+  const [deletingMsgId, setDeletingMsgId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
   const [selectedProfile, setSelectedProfile] = useState<{
@@ -52,13 +55,11 @@ const MessagesPage = ({ currentUserId, onBack, isOnline, isTypingTo, setTyping }
   } | null>(null);
 
   const fetchConversations = useCallback(async () => {
-    const { data: allMessages, error } = await supabase
+    const { data: allMessages } = await supabase
       .from("messages")
       .select("*")
       .or(`sender_id.eq.${currentUserId},receiver_id.eq.${currentUserId}`)
       .order("created_at", { ascending: false });
-
-    console.log("fetchConversations:", { allMessages, error, currentUserId });
 
     if (!allMessages || allMessages.length === 0) { setConversations([]); return; }
 
@@ -96,12 +97,11 @@ const MessagesPage = ({ currentUserId, onBack, isOnline, isTypingTo, setTyping }
 
   useEffect(() => {
     fetchConversations();
-    // Also refresh conversations list in real-time
     const channel = supabase
       .channel("conversations-list")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, (payload) => {
-        const msg = payload.new as Message;
-        if (msg.sender_id === currentUserId || msg.receiver_id === currentUserId) {
+      .on("postgres_changes", { event: "*", schema: "public", table: "messages" }, (payload) => {
+        const msg = (payload.new || payload.old) as Message;
+        if (msg && (msg.sender_id === currentUserId || msg.receiver_id === currentUserId)) {
           fetchConversations();
         }
       })
@@ -114,10 +114,18 @@ const MessagesPage = ({ currentUserId, onBack, isOnline, isTypingTo, setTyping }
     fetchMessages(selectedUser);
     const channel = supabase
       .channel(`dm-${selectedUser}`)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, (payload) => {
+      .on("postgres_changes", { event: "*", schema: "public", table: "messages" }, (payload) => {
+        if (payload.eventType === "DELETE") {
+          const old = payload.old as any;
+          if (old?.id) setMessages((prev) => prev.filter((m) => m.id !== old.id));
+          return;
+        }
         const msg = payload.new as Message;
         if ((msg.sender_id === currentUserId && msg.receiver_id === selectedUser) || (msg.sender_id === selectedUser && msg.receiver_id === currentUserId)) {
-          setMessages((prev) => [...prev, msg]);
+          setMessages((prev) => {
+            if (prev.some((m) => m.id === msg.id)) return prev;
+            return [...prev, msg];
+          });
           setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
         }
       })
@@ -125,7 +133,6 @@ const MessagesPage = ({ currentUserId, onBack, isOnline, isTypingTo, setTyping }
     return () => { supabase.removeChannel(channel); };
   }, [selectedUser, fetchMessages, currentUserId]);
 
-  // Clear typing when leaving chat
   useEffect(() => {
     return () => { setTyping?.(null); };
   }, [selectedUser, setTyping]);
@@ -154,6 +161,24 @@ const MessagesPage = ({ currentUserId, onBack, isOnline, isTypingTo, setTyping }
     setSending(false);
   };
 
+  const deleteMessage = async (msgId: string) => {
+    setDeletingMsgId(msgId);
+    await supabase.from("messages").delete().eq("id", msgId).eq("sender_id", currentUserId);
+    setMessages((prev) => prev.filter((m) => m.id !== msgId));
+    setDeletingMsgId(null);
+    toast.success("Message deleted");
+  };
+
+  const deleteConversation = async (otherUserId: string) => {
+    if (!confirm("Delete all your sent messages in this conversation?")) return;
+    await supabase.from("messages").delete().eq("sender_id", currentUserId).eq("receiver_id", otherUserId);
+    toast.success("Messages deleted");
+    if (selectedUser === otherUserId) {
+      setSelectedUser(null);
+    }
+    fetchConversations();
+  };
+
   const timeAgo = (dateStr: string) => {
     const diff = Date.now() - new Date(dateStr).getTime();
     const mins = Math.floor(diff / 60000);
@@ -171,11 +196,11 @@ const MessagesPage = ({ currentUserId, onBack, isOnline, isTypingTo, setTyping }
     const initials = (selectedProfile?.display_name || selectedProfile?.username || "?").slice(0, 2).toUpperCase();
     return (
       <div className="flex flex-col h-[calc(100vh-3.5rem)]">
-        <div className="flex items-center gap-3 p-3 border-b border-border/30 glass">
-          <button onClick={() => setSelectedUser(null)} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground">
+        <div className="flex items-center gap-3 p-3 border-b border-border/20 glass-card">
+          <button onClick={() => setSelectedUser(null)} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground transition-colors">
             <ArrowLeft className="w-4 h-4" />
           </button>
-          <Link to={`/profile/${selectedUser}`} className="flex items-center gap-2">
+          <Link to={`/profile/${selectedUser}`} className="flex items-center gap-2 flex-1">
             <div className="relative">
               <Avatar className="w-8 h-8">
                 <AvatarImage src={selectedProfile?.avatar_url || undefined} />
@@ -188,10 +213,29 @@ const MessagesPage = ({ currentUserId, onBack, isOnline, isTypingTo, setTyping }
                 {selectedProfile?.display_name || selectedProfile?.username || "User"}
               </span>
               {isOnline?.(selectedUser) && (
-                <p className="text-[10px] text-emerald-400">Online</p>
+                <p className="text-[10px] text-accent">Online</p>
               )}
             </div>
           </Link>
+          <div className="relative">
+            <button onClick={() => setShowChatMenu(!showChatMenu)} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground transition-colors">
+              <MoreVertical className="w-4 h-4" />
+            </button>
+            {showChatMenu && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setShowChatMenu(false)} />
+                <div className="absolute right-0 top-8 z-50 glass-card rounded-xl border border-border/20 shadow-xl overflow-hidden min-w-[180px]">
+                  <button
+                    onClick={() => { deleteConversation(selectedUser); setShowChatMenu(false); }}
+                    className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-destructive hover:bg-destructive/10 transition-colors"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    Delete conversation
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 space-y-2">
@@ -201,14 +245,24 @@ const MessagesPage = ({ currentUserId, onBack, isOnline, isTypingTo, setTyping }
                 key={m.id}
                 initial={{ opacity: 0, y: 10, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
                 transition={{ duration: 0.2 }}
-                className={`flex ${m.sender_id === currentUserId ? "justify-end" : "justify-start"}`}
+                className={`flex ${m.sender_id === currentUserId ? "justify-end" : "justify-start"} group`}
               >
+                {m.sender_id === currentUserId && (
+                  <button
+                    onClick={() => deleteMessage(m.id)}
+                    disabled={deletingMsgId === m.id}
+                    className="self-center mr-1.5 p-1 rounded-lg text-muted-foreground/0 group-hover:text-muted-foreground hover:!text-destructive hover:bg-destructive/10 transition-all opacity-0 group-hover:opacity-100"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                )}
                 <div
-                  className={`max-w-[75%] px-3 py-2 rounded-2xl text-sm ${
+                  className={`max-w-[75%] px-3.5 py-2 rounded-2xl text-sm ${
                     m.sender_id === currentUserId
                       ? "bg-gradient-to-r from-primary to-accent text-primary-foreground rounded-br-sm"
-                      : "bg-secondary text-foreground rounded-bl-sm"
+                      : "glass-card text-foreground rounded-bl-sm"
                   }`}
                 >
                   {m.content}
@@ -220,14 +274,14 @@ const MessagesPage = ({ currentUserId, onBack, isOnline, isTypingTo, setTyping }
           <div ref={messagesEndRef} />
         </div>
 
-        <div className="p-3 border-t border-border/30 glass">
+        <div className="p-3 border-t border-border/20 glass-card">
           <div className="flex gap-2">
             <input
               value={text}
               onChange={(e) => handleTyping(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendMessage()}
               placeholder="Message..."
-              className="flex-1 px-3 py-2 rounded-full bg-secondary/50 border border-border text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+              className="flex-1 px-3.5 py-2 rounded-full bg-secondary/40 border border-border/30 text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-primary/50 backdrop-blur-sm"
             />
             <motion.button
               onClick={sendMessage}
@@ -245,7 +299,6 @@ const MessagesPage = ({ currentUserId, onBack, isOnline, isTypingTo, setTyping }
   }
 
   // New message search
-
   const searchUsers = async (query: string) => {
     setSearchQuery(query);
     if (!query.trim()) { setSearchResults([]); return; }
@@ -269,9 +322,9 @@ const MessagesPage = ({ currentUserId, onBack, isOnline, isTypingTo, setTyping }
   // Conversations list
   return (
     <div>
-      <div className="flex items-center justify-between p-3 border-b border-border/30">
+      <div className="flex items-center justify-between p-3 border-b border-border/20">
         <div className="flex items-center gap-3">
-          <button onClick={onBack} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground">
+          <button onClick={onBack} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground transition-colors">
             <ArrowLeft className="w-4 h-4" />
           </button>
           <h2 className="text-sm font-semibold text-foreground">Messages</h2>
@@ -286,8 +339,8 @@ const MessagesPage = ({ currentUserId, onBack, isOnline, isTypingTo, setTyping }
 
       {/* New message search modal */}
       {showNewMessage && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 bg-background/60 backdrop-blur-sm" onClick={() => { setShowNewMessage(false); setSearchQuery(""); setSearchResults([]); }}>
-          <div className="glass rounded-2xl p-4 w-full max-w-sm mx-4 border border-border/30" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 bg-background/60 backdrop-blur-md" onClick={() => { setShowNewMessage(false); setSearchQuery(""); setSearchResults([]); }}>
+          <div className="glass-card rounded-2xl p-4 w-full max-w-sm mx-4 border border-border/20 shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-semibold text-foreground">New Message</h3>
               <button onClick={() => { setShowNewMessage(false); setSearchQuery(""); setSearchResults([]); }} className="text-muted-foreground hover:text-foreground">
@@ -301,7 +354,7 @@ const MessagesPage = ({ currentUserId, onBack, isOnline, isTypingTo, setTyping }
                 onChange={(e) => searchUsers(e.target.value)}
                 placeholder="Search users..."
                 autoFocus
-                className="w-full pl-9 pr-3 py-2 rounded-xl bg-secondary/40 border border-border/50 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                className="w-full pl-9 pr-3 py-2 rounded-xl bg-secondary/30 border border-border/30 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 backdrop-blur-sm"
               />
             </div>
             <div className="max-h-64 overflow-y-auto space-y-1">
@@ -346,40 +399,48 @@ const MessagesPage = ({ currentUserId, onBack, isOnline, isTypingTo, setTyping }
           </button>
         </div>
       ) : (
-        <div className="divide-y divide-border/30">
+        <div className="divide-y divide-border/20">
           {conversations.map((conv) => {
             const initials = (conv.display_name || conv.username || "?").slice(0, 2).toUpperCase();
             return (
-              <motion.button
-                key={conv.user_id}
-                onClick={() => openConversation(conv.user_id)}
-                whileHover={{ backgroundColor: "hsl(var(--secondary) / 0.3)" }}
-                className="w-full flex items-center gap-3 p-3 transition-colors"
-              >
-                <div className="relative">
-                  <Avatar className="w-10 h-10">
-                    <AvatarImage src={conv.avatar_url || undefined} />
-                    <AvatarFallback className="bg-secondary text-foreground text-sm">{initials}</AvatarFallback>
-                  </Avatar>
-                  <OnlineIndicator isOnline={isOnline?.(conv.user_id) ?? false} />
-                </div>
-                <div className="flex-1 min-w-0 text-left">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-foreground">{conv.display_name || conv.username || "User"}</span>
-                    <span className="text-[10px] text-muted-foreground">{timeAgo(conv.last_time)}</span>
+              <div key={conv.user_id} className="flex items-center group">
+                <motion.button
+                  onClick={() => openConversation(conv.user_id)}
+                  whileHover={{ backgroundColor: "hsl(var(--secondary) / 0.2)" }}
+                  className="flex-1 flex items-center gap-3 p-3 transition-colors"
+                >
+                  <div className="relative">
+                    <Avatar className="w-10 h-10">
+                      <AvatarImage src={conv.avatar_url || undefined} />
+                      <AvatarFallback className="bg-secondary text-foreground text-sm">{initials}</AvatarFallback>
+                    </Avatar>
+                    <OnlineIndicator isOnline={isOnline?.(conv.user_id) ?? false} />
                   </div>
-                  <p className="text-xs text-muted-foreground truncate">{conv.last_message}</p>
-                </div>
-                {conv.unread > 0 && (
-                  <motion.span
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    className="w-5 h-5 rounded-full bg-primary text-[10px] font-bold flex items-center justify-center text-primary-foreground"
-                  >
-                    {conv.unread}
-                  </motion.span>
-                )}
-              </motion.button>
+                  <div className="flex-1 min-w-0 text-left">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-foreground">{conv.display_name || conv.username || "User"}</span>
+                      <span className="text-[10px] text-muted-foreground">{timeAgo(conv.last_time)}</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground truncate">{conv.last_message}</p>
+                  </div>
+                  {conv.unread > 0 && (
+                    <motion.span
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      className="w-5 h-5 rounded-full bg-primary text-[10px] font-bold flex items-center justify-center text-primary-foreground"
+                    >
+                      {conv.unread}
+                    </motion.span>
+                  )}
+                </motion.button>
+                <button
+                  onClick={() => deleteConversation(conv.user_id)}
+                  className="p-2 mr-2 rounded-lg text-muted-foreground/0 group-hover:text-muted-foreground hover:!text-destructive hover:bg-destructive/10 transition-all opacity-0 group-hover:opacity-100"
+                  title="Delete conversation"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
             );
           })}
         </div>

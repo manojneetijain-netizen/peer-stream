@@ -85,7 +85,7 @@ const NotificationBell = ({ currentUserId }: NotificationBellProps) => {
       case "like": return <Heart className="w-3.5 h-3.5 text-destructive" />;
       case "comment": return <MessageCircle className="w-3.5 h-3.5 text-accent" />;
       case "follow": return <UserPlus className="w-3.5 h-3.5 text-primary" />;
-      case "repost": return <Repeat2 className="w-3.5 h-3.5 text-green-500" />;
+      case "repost": return <Repeat2 className="w-3.5 h-3.5 text-accent" />;
       default: return <Bell className="w-3.5 h-3.5 text-muted-foreground" />;
     }
   };
@@ -124,7 +124,7 @@ const NotificationBell = ({ currentUserId }: NotificationBellProps) => {
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-10 z-50 w-80 max-h-96 overflow-y-auto glass rounded-xl border border-border/30 shadow-xl">
+          <div className="absolute right-0 top-10 z-50 w-80 max-h-96 overflow-y-auto glass-card rounded-xl border border-border/20 shadow-2xl">
             <div className="p-3 border-b border-border/30 flex items-center justify-between">
               <span className="text-sm font-semibold text-foreground">Notifications</span>
             </div>

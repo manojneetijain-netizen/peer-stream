@@ -117,7 +117,7 @@ const FeedSidebar = ({ currentUserId, onMessagesClick, profile }: FeedSidebarPro
       <ThemeToggle className="mb-2" />
 
       {/* User profile card */}
-      <div className="glass rounded-2xl p-3 flex items-center gap-3">
+      <div className="glass-card rounded-2xl p-3 flex items-center gap-3">
         <Link to={`/profile/${currentUserId}`}>
           <Avatar className="w-10 h-10 ring-2 ring-primary/30 transition-all duration-200 hover:ring-primary/60">
             <AvatarImage src={profile?.avatar_url || undefined} />

@@ -121,20 +121,6 @@ const PostCard = ({ post, currentUserId, onUpdate, isBlocked, isMuted, onBlock, 
   const deletePost = async () => {
     if (!confirm("Delete this post?")) return;
     setDeleting(true);
-    await supabase.from("likes").delete().eq("post_id", post.id);
-    await supabase.from("comments").delete().eq("post_id", post.id);
-    await supabase.from("reposts").delete().eq("post_id", post.id);
-    await supabase.from("reactions").delete().eq("post_id", post.id);
-    await supabase.from("bookmarks").delete().eq("post_id", post.id);
-    await supabase.from("post_hashtags").delete().eq("post_id", post.id);
-    await supabase.from("post_images").delete().eq("post_id", post.id);
-    await supabase.from("post_views").delete().eq("post_id", post.id);
-    const { data: pollData } = await supabase.from("polls").select("id").eq("post_id", post.id).maybeSingle();
-    if (pollData) {
-      await supabase.from("poll_votes").delete().eq("poll_id", pollData.id);
-      await supabase.from("poll_options").delete().eq("poll_id", pollData.id);
-      await supabase.from("polls").delete().eq("post_id", post.id);
-    }
     await supabase.from("posts").delete().eq("id", post.id);
     onUpdate();
   };

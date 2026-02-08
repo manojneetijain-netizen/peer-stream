@@ -69,10 +69,10 @@ const StoryViewer = ({ stories, onClose }: { stories: Story[]; onClose: () => vo
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.4 }}
-          className="fixed inset-0 z-[100] bg-background/95 flex items-center justify-center"
+          className="fixed inset-0 z-[100] bg-black flex items-center justify-center"
           onClick={() => { setFading(true); setTimeout(onClose, 400); }}
         >
-          <div className="max-w-lg w-full mx-4 relative" onClick={(e) => e.stopPropagation()}>
+          <div className="w-full h-full relative flex flex-col" onClick={(e) => e.stopPropagation()}>
             {/* Segmented progress bars */}
             <div className="absolute top-0 left-0 right-0 z-20 px-3 pt-2 flex gap-1">
               {stories.map((_, i) => (
@@ -101,19 +101,19 @@ const StoryViewer = ({ stories, onClose }: { stories: Story[]; onClose: () => vo
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.97 }}
                 transition={{ duration: 0.25 }}
-                className="glass rounded-2xl overflow-hidden"
+                className="flex-1 flex flex-col overflow-hidden"
               >
-                <div className="flex items-center gap-2 p-3">
-                  <Avatar className="w-8 h-8">
+                <div className="flex items-center gap-2 px-4 py-2 absolute top-8 left-0 right-12 z-10">
+                  <Avatar className="w-8 h-8 ring-1 ring-white/30">
                     <AvatarImage src={story.author.avatar_url || undefined} />
-                    <AvatarFallback className="bg-secondary text-foreground text-xs">
+                    <AvatarFallback className="bg-white/20 text-white text-xs">
                       {(story.author.display_name || "?").slice(0, 2).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
-                  <span className="text-sm font-medium text-foreground">
+                  <span className="text-sm font-medium text-white drop-shadow">
                     {story.author.display_name || story.author.username}
                   </span>
-                  <span className="text-xs text-muted-foreground ml-auto">
+                  <span className="text-xs text-white/60 ml-auto">
                     {index + 1}/{stories.length}
                   </span>
                 </div>
@@ -129,16 +129,16 @@ const StoryViewer = ({ stories, onClose }: { stories: Story[]; onClose: () => vo
                       muted
                       onEnded={handleVideoEnd}
                       onTimeUpdate={handleVideoTimeUpdate}
-                      className="w-full max-h-[80vh] object-contain bg-black/20"
+                      className="w-full h-full object-contain"
                     />
                   ) : (
-                    <img src={story.image_url} alt="Story" className="w-full aspect-[9/16] object-cover max-h-[70vh]" />
+                    <img src={story.image_url} alt="Story" className="w-full h-full object-contain" />
                   )
                 )}
 
                 {story.content && (
-                  <div className={`p-6 ${!story.image_url ? "min-h-[300px] flex items-center justify-center" : ""}`}>
-                    <p className="text-foreground text-center text-lg">{story.content}</p>
+                  <div className={`p-6 ${!story.image_url ? "flex-1 flex items-center justify-center" : "absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent"}`}>
+                    <p className="text-white text-center text-lg">{story.content}</p>
                   </div>
                 )}
               </motion.div>

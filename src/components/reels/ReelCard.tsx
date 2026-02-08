@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Heart, MessageCircle, Share2, Music2, Pause, Play, Volume2, VolumeX } from "lucide-react";
+import { Heart, MessageCircle, Share2, Music2, Play, Volume2, VolumeX, Bookmark, UserPlus, UserCheck } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { Reel } from "@/hooks/useReels";
+import ReelCommentsSheet from "./ReelCommentsSheet";
 
 interface ReelCardProps {
   reel: Reel;
@@ -21,6 +22,33 @@ const ReelCard = ({ reel, isActive, currentUserId, onUpdate }: ReelCardProps) =>
   const [liked, setLiked] = useState(reel.user_has_liked);
   const [likesCount, setLikesCount] = useState(reel.likes_count);
   const [showHeart, setShowHeart] = useState(false);
+  const [bookmarked, setBookmarked] = useState(false);
+  const [following, setFollowing] = useState(false);
+  const [showComments, setShowComments] = useState(false);
+  const [progress, setProgress] = useState(0);
+
+  // Check follow & bookmark status
+  useEffect(() => {
+    if (!currentUserId || currentUserId === reel.user_id) return;
+    supabase
+      .from("follows")
+      .select("id")
+      .eq("follower_id", currentUserId)
+      .eq("following_id", reel.user_id)
+      .maybeSingle()
+      .then(({ data }) => setFollowing(!!data));
+  }, [currentUserId, reel.user_id]);
+
+  useEffect(() => {
+    if (!currentUserId) return;
+    supabase
+      .from("bookmarks")
+      .select("id")
+      .eq("user_id", currentUserId)
+      .eq("post_id", reel.id)
+      .maybeSingle()
+      .then(({ data }) => setBookmarked(!!data));
+  }, [currentUserId, reel.id]);
 
   useEffect(() => {
     if (!videoRef.current) return;
@@ -31,6 +59,18 @@ const ReelCard = ({ reel, isActive, currentUserId, onUpdate }: ReelCardProps) =>
     } else {
       videoRef.current.pause();
     }
+  }, [isActive]);
+
+  // Progress bar
+  useEffect(() => {
+    if (!videoRef.current || !isActive) return;
+    const video = videoRef.current;
+    const update = () => {
+      if (video.duration) setProgress((video.currentTime / video.duration) * 100);
+      if (isActive && !video.paused) requestAnimationFrame(update);
+    };
+    video.addEventListener("play", () => requestAnimationFrame(update));
+    return () => {};
   }, [isActive]);
 
   const togglePlay = () => {
@@ -48,7 +88,6 @@ const ReelCard = ({ reel, isActive, currentUserId, onUpdate }: ReelCardProps) =>
     if (!currentUserId) return;
     setShowHeart(true);
     setTimeout(() => setShowHeart(false), 800);
-
     if (!liked) {
       setLiked(true);
       setLikesCount((c) => c + 1);
@@ -66,6 +105,32 @@ const ReelCard = ({ reel, isActive, currentUserId, onUpdate }: ReelCardProps) =>
       setLiked(true);
       setLikesCount((c) => c + 1);
       await supabase.from("likes").insert({ user_id: currentUserId, post_id: reel.id });
+    }
+  };
+
+  const toggleBookmark = async () => {
+    if (!currentUserId) return;
+    if (bookmarked) {
+      setBookmarked(false);
+      await supabase.from("bookmarks").delete().eq("user_id", currentUserId).eq("post_id", reel.id);
+      toast.success("Removed from saved");
+    } else {
+      setBookmarked(true);
+      await supabase.from("bookmarks").insert({ user_id: currentUserId, post_id: reel.id });
+      toast.success("Saved!");
+    }
+  };
+
+  const toggleFollow = async () => {
+    if (!currentUserId || currentUserId === reel.user_id) return;
+    if (following) {
+      setFollowing(false);
+      await supabase.from("follows").delete().eq("follower_id", currentUserId).eq("following_id", reel.user_id);
+      toast.success("Unfollowed");
+    } else {
+      setFollowing(true);
+      await supabase.from("follows").insert({ follower_id: currentUserId, following_id: reel.user_id });
+      toast.success("Following!");
     }
   };
 
@@ -94,7 +159,15 @@ const ReelCard = ({ reel, isActive, currentUserId, onUpdate }: ReelCardProps) =>
         onDoubleClick={handleDoubleTap}
       />
 
-      {/* Double-tap heart animation */}
+      {/* Progress bar at top */}
+      <div className="absolute top-0 left-0 right-0 h-1 z-30 bg-white/10">
+        <motion.div
+          className="h-full bg-white/70 rounded-full"
+          style={{ width: `${progress}%` }}
+        />
+      </div>
+
+      {/* Double-tap heart */}
       <AnimatePresence>
         {showHeart && (
           <motion.div
@@ -126,21 +199,17 @@ const ReelCard = ({ reel, isActive, currentUserId, onUpdate }: ReelCardProps) =>
       </AnimatePresence>
 
       {/* Right side actions */}
-      <div className="absolute right-3 bottom-32 flex flex-col items-center gap-5 z-20">
+      <div className="absolute right-3 bottom-28 flex flex-col items-center gap-5 z-20">
         {/* Like */}
         <button onClick={toggleLike} className="flex flex-col items-center gap-1">
           <motion.div whileTap={{ scale: 1.4 }}>
-            <Heart
-              className={`w-7 h-7 drop-shadow-lg transition-colors ${
-                liked ? "text-red-500 fill-red-500" : "text-white"
-              }`}
-            />
+            <Heart className={`w-7 h-7 drop-shadow-lg transition-colors ${liked ? "text-red-500 fill-red-500" : "text-white"}`} />
           </motion.div>
           <span className="text-white text-xs font-semibold drop-shadow">{likesCount}</span>
         </button>
 
         {/* Comment */}
-        <button className="flex flex-col items-center gap-1">
+        <button onClick={() => setShowComments(true)} className="flex flex-col items-center gap-1">
           <MessageCircle className="w-7 h-7 text-white drop-shadow-lg" />
           <span className="text-white text-xs font-semibold drop-shadow">{reel.comments_count}</span>
         </button>
@@ -148,11 +217,15 @@ const ReelCard = ({ reel, isActive, currentUserId, onUpdate }: ReelCardProps) =>
         {/* Share */}
         <button onClick={handleShare} className="flex flex-col items-center gap-1">
           <Share2 className="w-7 h-7 text-white drop-shadow-lg" />
-          <span className="text-white text-xs font-semibold drop-shadow">Share</span>
+        </button>
+
+        {/* Bookmark */}
+        <button onClick={toggleBookmark} className="flex flex-col items-center gap-1">
+          <Bookmark className={`w-7 h-7 drop-shadow-lg transition-colors ${bookmarked ? "text-yellow-400 fill-yellow-400" : "text-white"}`} />
         </button>
 
         {/* Mute toggle */}
-        <button onClick={() => setMuted(!muted)} className="flex flex-col items-center gap-1">
+        <button onClick={() => setMuted(!muted)}>
           {muted ? (
             <VolumeX className="w-6 h-6 text-white/70 drop-shadow-lg" />
           ) : (
@@ -172,18 +245,33 @@ const ReelCard = ({ reel, isActive, currentUserId, onUpdate }: ReelCardProps) =>
 
       {/* Bottom info */}
       <div className="absolute bottom-6 left-4 right-16 z-20">
-        <Link to={`/profile/${reel.user_id}`} className="flex items-center gap-2 mb-2">
-          <Avatar className="w-9 h-9 ring-2 ring-white/40">
-            <AvatarImage src={reel.profiles?.avatar_url || undefined} />
-            <AvatarFallback className="bg-gray-700 text-white text-xs">{initials}</AvatarFallback>
-          </Avatar>
-          <span className="text-white font-semibold text-sm drop-shadow-lg">
-            {reel.profiles?.display_name || reel.profiles?.username || "User"}
-          </span>
-          {reel.profiles?.is_verified && (
-            <span className="text-blue-400 text-xs">✓</span>
+        <div className="flex items-center gap-2 mb-2">
+          <Link to={`/profile/${reel.user_id}`} className="flex items-center gap-2">
+            <Avatar className="w-9 h-9 ring-2 ring-white/40">
+              <AvatarImage src={reel.profiles?.avatar_url || undefined} />
+              <AvatarFallback className="bg-gray-700 text-white text-xs">{initials}</AvatarFallback>
+            </Avatar>
+            <span className="text-white font-semibold text-sm drop-shadow-lg">
+              {reel.profiles?.display_name || reel.profiles?.username || "User"}
+            </span>
+            {reel.profiles?.is_verified && (
+              <span className="text-blue-400 text-xs">✓</span>
+            )}
+          </Link>
+          {/* Follow button */}
+          {currentUserId && currentUserId !== reel.user_id && (
+            <button
+              onClick={toggleFollow}
+              className={`ml-1 px-3 py-1 rounded-lg text-xs font-semibold border transition-colors ${
+                following
+                  ? "border-white/30 text-white/70"
+                  : "border-white bg-white text-black"
+              }`}
+            >
+              {following ? "Following" : "Follow"}
+            </button>
           )}
-        </Link>
+        </div>
         {reel.content && (
           <p className="text-white/90 text-sm drop-shadow-lg line-clamp-2">{reel.content}</p>
         )}
@@ -193,6 +281,14 @@ const ReelCard = ({ reel, isActive, currentUserId, onUpdate }: ReelCardProps) =>
       <div className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-black/40 to-transparent pointer-events-none z-10" />
       {/* Bottom gradient */}
       <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-black/60 to-transparent pointer-events-none z-10" />
+
+      {/* Comments sheet */}
+      <ReelCommentsSheet
+        open={showComments}
+        onClose={() => setShowComments(false)}
+        postId={reel.id}
+        currentUserId={currentUserId}
+      />
     </div>
   );
 };

@@ -7,7 +7,7 @@ import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
 import { useBlockMute } from "@/hooks/useBlockMute";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { usePresence } from "@/hooks/usePresence";
-import { useMouseParallax } from "@/hooks/useMouseParallax";
+
 import { supabase } from "@/integrations/supabase/client";
 import PostCard from "@/components/feed/PostCard";
 import StoriesBar from "@/components/feed/StoriesBar";
@@ -33,7 +33,7 @@ const Feed = () => {
   const { isBlocked, isMuted, blockUser, unblockUser, muteUser, unmuteUser } = useBlockMute(user?.id);
   const [profile, setProfile] = useState<any>(null);
   const { isOnline, isTypingTo, setTyping } = usePresence(user?.id);
-  const { mouseX, mouseY } = useMouseParallax();
+  
 
   usePushNotifications(user?.id);
 
@@ -70,13 +70,12 @@ const Feed = () => {
 
       {/* Left Sidebar — parallax island */}
       <div className="hidden lg:block">
-        <motion.div style={{ x: mouseX * 3, y: mouseY * 3 }}>
-          <div className="sticky top-0 h-screen py-4 pl-4">
-            <div className="island-sidebar h-full">
-              <FeedSidebar currentUserId={user.id} onMessagesClick={() => setShowMessages(true)} profile={profile} />
-            </div>
+        <div className="fixed top-0 left-0 h-screen py-4 pl-4 z-40">
+          <div className="island-sidebar h-full">
+            <FeedSidebar currentUserId={user.id} onMessagesClick={() => setShowMessages(true)} profile={profile} />
           </div>
-        </motion.div>
+        </div>
+        <div className="w-[272px] shrink-0" /> {/* spacer */}
       </div>
 
       {/* Mobile header */}
@@ -206,13 +205,12 @@ const Feed = () => {
 
       {/* Right Sidebar — parallax island */}
       <div className="hidden xl:block">
-        <motion.div style={{ x: mouseX * -3, y: mouseY * 2 }}>
-          <div className="sticky top-0 h-screen py-4 pr-4">
-            <div className="island-sidebar h-full overflow-hidden">
-              <RightSidebar currentUserId={user.id} />
-            </div>
+        <div className="w-[336px] shrink-0" /> {/* spacer */}
+        <div className="fixed top-0 right-0 h-screen py-4 pr-4 z-40">
+          <div className="island-sidebar h-full overflow-hidden">
+            <RightSidebar currentUserId={user.id} />
           </div>
-        </motion.div>
+        </div>
       </div>
 
       {/* Floating Composer Bubble */}

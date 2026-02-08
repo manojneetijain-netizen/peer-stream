@@ -54,7 +54,7 @@ const FeedSidebar = ({ currentUserId, onMessagesClick, profile }: FeedSidebarPro
   const initials = (profile?.display_name || profile?.username || "?").slice(0, 2).toUpperCase();
 
   return (
-    <aside className="sticky top-0 h-screen w-64 flex flex-col py-6 px-4 border-r border-border/20">
+    <aside className="sticky top-0 h-screen w-64 flex flex-col py-6 px-4">
       {/* Logo */}
       <Link to="/" className="mb-8 px-3">
         <span className="text-2xl font-bold gradient-text tracking-tight">Pulse</span>
@@ -117,7 +117,7 @@ const FeedSidebar = ({ currentUserId, onMessagesClick, profile }: FeedSidebarPro
       <ThemeToggle className="mb-2" />
 
       {/* User profile card */}
-      <div className="glass-card rounded-2xl p-3 flex items-center gap-3">
+      <div className="island-card p-3 flex items-center gap-3">
         <Link to={`/profile/${currentUserId}`}>
           <Avatar className="w-10 h-10 ring-2 ring-primary/30 transition-all duration-200 hover:ring-primary/60">
             <AvatarImage src={profile?.avatar_url || undefined} />

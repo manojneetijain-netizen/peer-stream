@@ -7,8 +7,8 @@ import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
 import { useBlockMute } from "@/hooks/useBlockMute";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { usePresence } from "@/hooks/usePresence";
+import { useMouseParallax } from "@/hooks/useMouseParallax";
 import { supabase } from "@/integrations/supabase/client";
-import CreatePost from "@/components/feed/CreatePost";
 import PostCard from "@/components/feed/PostCard";
 import StoriesBar from "@/components/feed/StoriesBar";
 import NotificationBell from "@/components/feed/NotificationBell";
@@ -18,6 +18,8 @@ import RightSidebar from "@/components/feed/RightSidebar";
 import AnimatedPost from "@/components/feed/AnimatedPost";
 import MobileBottomNav from "@/components/feed/MobileBottomNav";
 import PullToRefresh from "@/components/feed/PullToRefresh";
+import GradientBackground from "@/components/feed/GradientBackground";
+import FloatingComposer from "@/components/feed/FloatingComposer";
 import { Compass, Users, Loader2 } from "lucide-react";
 
 type FeedTab = "following" | "discover";
@@ -31,6 +33,7 @@ const Feed = () => {
   const { isBlocked, isMuted, blockUser, unblockUser, muteUser, unmuteUser } = useBlockMute(user?.id);
   const [profile, setProfile] = useState<any>(null);
   const { isOnline, isTypingTo, setTyping } = usePresence(user?.id);
+  const { mouseX, mouseY } = useMouseParallax();
 
   usePushNotifications(user?.id);
 
@@ -52,6 +55,7 @@ const Feed = () => {
   if (showMessages) {
     return (
       <div className="min-h-screen bg-background flex">
+        <GradientBackground />
         <FeedSidebar currentUserId={user.id} onMessagesClick={() => setShowMessages(false)} profile={profile} />
         <main className="flex-1 max-w-2xl mx-auto">
           <MessagesPage currentUserId={user.id} onBack={() => setShowMessages(false)} isOnline={isOnline} isTypingTo={isTypingTo} setTyping={setTyping} />
@@ -61,10 +65,18 @@ const Feed = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background flex">
-      {/* Left Sidebar */}
+    <div className="min-h-screen flex">
+      <GradientBackground />
+
+      {/* Left Sidebar — parallax island */}
       <div className="hidden lg:block">
-        <FeedSidebar currentUserId={user.id} onMessagesClick={() => setShowMessages(true)} profile={profile} />
+        <motion.div style={{ x: mouseX * 3, y: mouseY * 3 }}>
+          <div className="sticky top-0 h-screen py-4 pl-4">
+            <div className="island-sidebar h-full">
+              <FeedSidebar currentUserId={user.id} onMessagesClick={() => setShowMessages(true)} profile={profile} />
+            </div>
+          </div>
+        </motion.div>
       </div>
 
       {/* Mobile header */}
@@ -77,129 +89,134 @@ const Feed = () => {
         </div>
       </div>
 
-      {/* Center Feed */}
-      <main className="flex-1 min-w-0 border-x border-border/10">
+      {/* Center Feed — floating islands */}
+      <main className="flex-1 min-w-0">
         <PullToRefresh onRefresh={refetch}>
-        <div className="max-w-2xl mx-auto px-4 py-6 lg:py-4 space-y-4 lg:mt-0 mt-14 pb-20 lg:pb-4">
-          {/* Header with notification bell (desktop) */}
-          <div className="hidden lg:flex items-center justify-between mb-2">
-            <motion.h2
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="text-xl font-bold text-foreground"
-            >
-              Home
-            </motion.h2>
-            <NotificationBell currentUserId={user.id} />
-          </div>
-
-          <StoriesBar currentUserId={user.id} />
-
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-            <CreatePost userId={user.id} onCreated={refetch} />
-          </motion.div>
-
-          {/* Feed tabs */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15 }}
-            className="flex rounded-xl overflow-hidden glass-card"
-          >
-            {([
-              { key: "discover" as FeedTab, label: "Discover", icon: Compass },
-              { key: "following" as FeedTab, label: "Following", icon: Users },
-            ]).map(({ key, label, icon: Icon }) => (
-              <button
-                key={key}
-                onClick={() => setTab(key)}
-                className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium transition-all duration-300 relative ${
-                  tab === key
-                    ? "text-foreground"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
+          <div className="max-w-[680px] mx-auto px-4 py-6 lg:py-6 space-y-7 lg:mt-0 mt-14 pb-24 lg:pb-6">
+            {/* Header with notification bell (desktop) */}
+            <div className="hidden lg:flex items-center justify-between mb-2">
+              <motion.h2
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-xl font-bold text-foreground"
               >
-                <Icon className={`w-4 h-4 transition-transform duration-200 ${tab === key ? "scale-110" : ""}`} />
-                {label}
-                {tab === key && (
-                  <motion.div
-                    layoutId="feedTab"
-                    className="absolute inset-0 bg-gradient-to-r from-pulse-blue/20 to-pulse-cyan/20 rounded-xl"
-                    transition={{ type: "spring", bounce: 0.2, duration: 0.5 }}
-                  />
-                )}
-              </button>
-            ))}
-          </motion.div>
-
-          {feedLoading ? (
-            <div className="flex justify-center py-16">
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-              >
-                <Loader2 className="w-6 h-6 text-primary" />
-              </motion.div>
+                Home
+              </motion.h2>
+              <NotificationBell currentUserId={user.id} />
             </div>
-          ) : filteredPosts.length === 0 ? (
+
+            <StoriesBar currentUserId={user.id} />
+
+            {/* Feed tabs */}
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="glass-card rounded-2xl p-8 text-center"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15 }}
+              className="flex rounded-3xl overflow-hidden island-card !p-0"
             >
-              <h2 className="text-xl font-semibold text-foreground mb-2">
-                {tab === "following" ? "No posts from people you follow" : "Welcome to Pulse 🎉"}
-              </h2>
-              <p className="text-muted-foreground text-sm">
-                {tab === "following"
-                  ? "Follow some people to see their posts here!"
-                  : "No posts yet. Be the first to share something!"}
-              </p>
-            </motion.div>
-          ) : (
-            <>
-              {filteredPosts.map((post, index) => (
-                <AnimatedPost key={post.id} index={index}>
-                  <PostCard
-                    post={post}
-                    currentUserId={user.id}
-                    onUpdate={refetch}
-                    isBlocked={isBlocked(post.user_id)}
-                    isMuted={isMuted(post.user_id)}
-                    onBlock={() => blockUser(post.user_id)}
-                    onUnblock={() => unblockUser(post.user_id)}
-                    onMute={() => muteUser(post.user_id)}
-                    onUnmute={() => unmuteUser(post.user_id)}
-                  />
-                </AnimatedPost>
-              ))}
-              <div ref={sentinelRef} className="h-1" />
-              {loadingMore && (
-                <div className="flex justify-center py-4">
-                  <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}>
-                    <Loader2 className="w-5 h-5 text-muted-foreground" />
-                  </motion.div>
-                </div>
-              )}
-              {!hasMore && filteredPosts.length > 0 && (
-                <motion.p
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="text-center text-xs text-muted-foreground py-4"
+              {([
+                { key: "discover" as FeedTab, label: "Discover", icon: Compass },
+                { key: "following" as FeedTab, label: "Following", icon: Users },
+              ]).map(({ key, label, icon: Icon }) => (
+                <button
+                  key={key}
+                  onClick={() => setTab(key)}
+                  className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium transition-all duration-300 relative ${
+                    tab === key
+                      ? "text-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
                 >
-                  You've seen it all ✨
-                </motion.p>
-              )}
-            </>
-          )}
-        </div>
+                  <Icon className={`w-4 h-4 transition-transform duration-200 ${tab === key ? "scale-110" : ""}`} />
+                  {label}
+                  {tab === key && (
+                    <motion.div
+                      layoutId="feedTab"
+                      className="absolute inset-0 bg-gradient-to-r from-pulse-blue/20 to-pulse-cyan/20 rounded-3xl"
+                      transition={{ type: "spring", bounce: 0.2, duration: 0.5 }}
+                    />
+                  )}
+                </button>
+              ))}
+            </motion.div>
+
+            {feedLoading ? (
+              <div className="flex justify-center py-16">
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                >
+                  <Loader2 className="w-6 h-6 text-primary" />
+                </motion.div>
+              </div>
+            ) : filteredPosts.length === 0 ? (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="island-card p-8 text-center"
+              >
+                <h2 className="text-xl font-semibold text-foreground mb-2">
+                  {tab === "following" ? "No posts from people you follow" : "Welcome to Pulse 🎉"}
+                </h2>
+                <p className="text-muted-foreground text-sm">
+                  {tab === "following"
+                    ? "Follow some people to see their posts here!"
+                    : "No posts yet. Be the first to share something!"}
+                </p>
+              </motion.div>
+            ) : (
+              <>
+                {filteredPosts.map((post, index) => (
+                  <AnimatedPost key={post.id} index={index}>
+                    <PostCard
+                      post={post}
+                      currentUserId={user.id}
+                      onUpdate={refetch}
+                      isBlocked={isBlocked(post.user_id)}
+                      isMuted={isMuted(post.user_id)}
+                      onBlock={() => blockUser(post.user_id)}
+                      onUnblock={() => unblockUser(post.user_id)}
+                      onMute={() => muteUser(post.user_id)}
+                      onUnmute={() => unmuteUser(post.user_id)}
+                    />
+                  </AnimatedPost>
+                ))}
+                <div ref={sentinelRef} className="h-1" />
+                {loadingMore && (
+                  <div className="flex justify-center py-4">
+                    <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}>
+                      <Loader2 className="w-5 h-5 text-muted-foreground" />
+                    </motion.div>
+                  </div>
+                )}
+                {!hasMore && filteredPosts.length > 0 && (
+                  <motion.p
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="text-center text-xs text-muted-foreground py-4"
+                  >
+                    You've seen it all ✨
+                  </motion.p>
+                )}
+              </>
+            )}
+          </div>
         </PullToRefresh>
       </main>
 
-      {/* Right Sidebar */}
+      {/* Right Sidebar — parallax island */}
       <div className="hidden xl:block">
-        <RightSidebar currentUserId={user.id} />
+        <motion.div style={{ x: mouseX * -3, y: mouseY * 2 }}>
+          <div className="sticky top-0 h-screen py-4 pr-4">
+            <div className="island-sidebar h-full overflow-hidden">
+              <RightSidebar currentUserId={user.id} />
+            </div>
+          </div>
+        </motion.div>
       </div>
+
+      {/* Floating Composer Bubble */}
+      <FloatingComposer userId={user.id} onCreated={refetch} />
 
       <MobileBottomNav onMessagesClick={() => setShowMessages(true)} />
     </div>

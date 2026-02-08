@@ -67,20 +67,20 @@ const Auth = () => {
         </Link>
 
         {signUpSuccess ? (
-          <div className="glass rounded-2xl p-8 text-center">
+          <div className="glass-card rounded-2xl p-8 text-center shadow-2xl">
             <h2 className="text-xl font-semibold text-foreground mb-2">Check your email</h2>
             <p className="text-muted-foreground text-sm">
               We sent a confirmation link. Click it to activate your account.
             </p>
             <button
               onClick={() => { setSignUpSuccess(false); setIsSignUp(false); }}
-              className="mt-6 text-sm text-pulse-cyan hover:underline"
+              className="mt-6 text-sm text-accent hover:underline"
             >
               Back to login
             </button>
           </div>
         ) : (
-          <div className="glass rounded-2xl p-8">
+          <div className="glass-card rounded-2xl p-8 shadow-2xl">
             {/* Tabs */}
             <div className="flex mb-8 rounded-xl overflow-hidden bg-secondary/50">
               {["Sign In", "Sign Up"].map((label, i) => (

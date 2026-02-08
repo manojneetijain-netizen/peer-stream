@@ -47,10 +47,12 @@
     --pulse-cyan: 190 100% 44%;
     --glass-bg: 240 10% 6%;
     --glass-border: 240 10% 16%;
+    --glass-blur: 24px;
+    --glass-opacity: 0.55;
   }
 
   .light {
-    --background: 0 0% 98%;
+    --background: 220 20% 97%;
     --foreground: 240 10% 10%;
 
     --card: 0 0% 100%;
@@ -62,11 +64,11 @@
     --primary: 222 100% 50%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 240 5% 92%;
+    --secondary: 220 14% 92%;
     --secondary-foreground: 240 10% 10%;
 
-    --muted: 240 5% 94%;
-    --muted-foreground: 240 5% 46%;
+    --muted: 220 14% 94%;
+    --muted-foreground: 220 8% 46%;
 
     --accent: 190 100% 44%;
     --accent-foreground: 0 0% 100%;
@@ -74,23 +76,25 @@
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 240 6% 85%;
-    --input: 240 6% 85%;
+    --border: 220 13% 87%;
+    --input: 220 13% 87%;
     --ring: 222 100% 50%;
 
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 240 10% 10%;
     --sidebar-primary: 222 100% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 5% 94%;
+    --sidebar-accent: 220 14% 94%;
     --sidebar-accent-foreground: 240 10% 10%;
-    --sidebar-border: 240 6% 85%;
+    --sidebar-border: 220 13% 87%;
     --sidebar-ring: 222 100% 50%;
 
     --pulse-blue: 222 100% 50%;
     --pulse-cyan: 190 100% 44%;
     --glass-bg: 0 0% 100%;
-    --glass-border: 240 6% 85%;
+    --glass-border: 220 13% 90%;
+    --glass-blur: 24px;
+    --glass-opacity: 0.65;
   }
 }
 
@@ -131,11 +135,36 @@
     pointer-events: none;
   }
 
+  /* Core glass effect - iPhone-inspired frosted glass */
   .glass {
-    background: hsl(var(--glass-bg) / 0.6);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid hsl(var(--glass-border) / 0.4);
+    background: hsl(var(--glass-bg) / var(--glass-opacity));
+    backdrop-filter: blur(var(--glass-blur)) saturate(1.8);
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.8);
+    border: 1px solid hsl(var(--glass-border) / 0.35);
+    box-shadow:
+      0 1px 2px hsl(var(--glass-border) / 0.08),
+      inset 0 1px 0 hsl(var(--glass-border) / 0.15);
+  }
+
+  /* Glass card variant - subtle elevated glass panel */
+  .glass-card {
+    background: hsl(var(--glass-bg) / var(--glass-opacity));
+    backdrop-filter: blur(var(--glass-blur)) saturate(1.8);
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.8);
+    border: 1px solid hsl(var(--glass-border) / 0.25);
+    box-shadow:
+      0 4px 16px hsl(var(--glass-border) / 0.06),
+      0 1px 3px hsl(var(--glass-border) / 0.1),
+      inset 0 1px 0 hsl(var(--glass-border) / 0.12);
+  }
+
+  /* Glass surface - for nav bars and headers */
+  .glass-surface {
+    background: hsl(var(--glass-bg) / 0.7);
+    backdrop-filter: blur(32px) saturate(2);
+    -webkit-backdrop-filter: blur(32px) saturate(2);
+    border-bottom: 1px solid hsl(var(--glass-border) / 0.2);
+    box-shadow: 0 1px 3px hsl(var(--glass-border) / 0.05);
   }
 
   .glow-blue {

@@ -68,7 +68,7 @@ const Feed = () => {
       </div>
 
       {/* Mobile header */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 glass border-b border-border/30">
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 glass-surface">
         <div className="px-4 h-14 flex items-center justify-between">
           <span className="text-lg font-bold gradient-text">Pulse</span>
           <div className="flex items-center gap-1">
@@ -104,7 +104,7 @@ const Feed = () => {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15 }}
-            className="flex rounded-xl overflow-hidden glass"
+            className="flex rounded-xl overflow-hidden glass-card"
           >
             {([
               { key: "discover" as FeedTab, label: "Discover", icon: Compass },
@@ -145,7 +145,7 @@ const Feed = () => {
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="glass rounded-2xl p-8 text-center"
+              className="glass-card rounded-2xl p-8 text-center"
             >
               <h2 className="text-xl font-semibold text-foreground mb-2">
                 {tab === "following" ? "No posts from people you follow" : "Welcome to Pulse 🎉"}

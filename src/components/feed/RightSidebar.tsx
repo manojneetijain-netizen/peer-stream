@@ -73,7 +73,7 @@ const RightSidebar = ({ currentUserId }: RightSidebarProps) => {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="glass rounded-2xl p-4"
+          className="glass-card rounded-2xl p-4"
         >
           <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
             <TrendingUp className="w-4 h-4 text-accent" />
@@ -110,7 +110,7 @@ const RightSidebar = ({ currentUserId }: RightSidebarProps) => {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
-          className="glass rounded-2xl p-4"
+          className="glass-card rounded-2xl p-4"
         >
           <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
             <UserPlus className="w-4 h-4 text-primary" />

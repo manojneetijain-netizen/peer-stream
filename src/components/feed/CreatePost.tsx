@@ -170,7 +170,7 @@ const CreatePost = ({ userId, onCreated }: CreatePostProps) => {
   };
 
   return (
-    <div className="glass-card rounded-2xl p-4">
+    <div className="island-card p-4">
       <textarea
         value={content}
         onChange={(e) => setContent(e.target.value)}

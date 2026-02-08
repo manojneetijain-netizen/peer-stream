@@ -19,6 +19,7 @@ import NotificationSettings from "./pages/NotificationSettings";
 import UserLists from "./pages/UserLists";
 import ExplorePage from "./pages/ExplorePage";
 // Settings is now integrated into Profile page
+import Reels from "./pages/Reels";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -44,6 +45,7 @@ const AnimatedRoutes = () => {
         <Route path="/settings" element={<Navigate to="/profile" replace />} />
         <Route path="/lists" element={<PageTransition><UserLists /></PageTransition>} />
         <Route path="/explore" element={<PageTransition><ExplorePage /></PageTransition>} />
+        <Route path="/reels" element={<Reels />} />
         <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
       </Routes>
     </AnimatePresence>

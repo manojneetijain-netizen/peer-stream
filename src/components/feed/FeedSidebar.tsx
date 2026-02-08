@@ -7,7 +7,7 @@ import ThemeToggle from "@/components/feed/ThemeToggle";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Home, Compass, Bookmark, MessageCircle,
-  List, LogOut, TrendingUp,
+  List, LogOut, TrendingUp, Film,
 } from "lucide-react";
 
 interface FeedSidebarProps {
@@ -18,6 +18,7 @@ interface FeedSidebarProps {
 
 const navItems = [
   { label: "Feed", icon: Home, path: "/feed" },
+  { label: "Reels", icon: Film, path: "/reels" },
   { label: "Explore", icon: Compass, path: "/explore" },
   { label: "Trending", icon: TrendingUp, path: "/trending" },
   { label: "Bookmarks", icon: Bookmark, path: "/bookmarks" },

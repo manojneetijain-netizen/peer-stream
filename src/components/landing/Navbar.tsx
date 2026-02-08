@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Menu, X } from "lucide-react";
+import ThemeToggle from "@/components/feed/ThemeToggle";
 
 const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
@@ -40,6 +41,7 @@ const Navbar = () => {
         </div>
 
         <div className="flex items-center gap-3">
+          <ThemeToggle showLabel={false} className="hidden md:flex" />
           <Link
             to="/auth"
             className="hidden md:block gradient-border rounded-full px-5 py-2 text-sm font-medium text-foreground hover:bg-secondary/50 transition-colors"
@@ -75,6 +77,7 @@ const Navbar = () => {
                   {link}
                 </a>
               ))}
+              <ThemeToggle showLabel={true} className="justify-center" />
               <Link
                 to="/auth"
                 onClick={() => setMobileOpen(false)}

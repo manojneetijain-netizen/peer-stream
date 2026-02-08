@@ -44,7 +44,7 @@ const itemVariants = {
 };
 
 const ProfileSettings = ({ userId, userEmail, profile }: ProfileSettingsProps) => {
-  const { theme, toggleTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
   const [activeTab, setActiveTab] = useState<Tab>("account");
   const [prefs, setPrefs] = useState<Prefs>({ likes: true, comments: true, follows: true, messages: true, reposts: true });
   const [prefsLoading, setPrefsLoading] = useState(true);
@@ -217,39 +217,43 @@ const ProfileSettings = ({ userId, userEmail, profile }: ProfileSettingsProps) =
           {activeTab === "appearance" && (
             <motion.div key="appearance" variants={contentVariants} initial="initial" animate="animate" exit="exit" className="space-y-5">
               <motion.p variants={itemVariants} className="text-sm text-muted-foreground">Choose your preferred theme</motion.p>
-              <motion.div variants={itemVariants} className="grid grid-cols-2 gap-3">
-                {(["dark", "light"] as const).map((t) => (
-                  <motion.button
-                    key={t}
-                    onClick={() => { if (theme !== t) toggleTheme(); }}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    className={`relative rounded-2xl p-3 border-2 transition-all duration-300 ${
-                      theme === t
-                        ? "border-primary bg-primary/10"
-                        : "border-border/30 hover:border-border/60 bg-secondary/20"
-                    }`}
-                  >
-                    <div className={`w-full aspect-[4/3] rounded-xl mb-2 ${t === "dark" ? "bg-[hsl(240,10%,4%)]" : "bg-[hsl(0,0%,96%)]"}`}>
-                      <div className="p-2 space-y-1.5">
-                        <div className={`h-2 rounded-full w-3/4 ${t === "dark" ? "bg-[hsl(240,10%,14%)]" : "bg-[hsl(240,6%,85%)]"}`} />
-                        <div className={`h-2 rounded-full w-1/2 ${t === "dark" ? "bg-[hsl(240,10%,14%)]" : "bg-[hsl(240,6%,85%)]"}`} />
+              <motion.div variants={itemVariants} className="grid grid-cols-3 gap-3">
+                {(["dark", "light", "warm"] as const).map((t) => {
+                  const previewBg = t === "dark" ? "bg-[hsl(240,10%,4%)]" : t === "light" ? "bg-[hsl(220,14%,92%)]" : "bg-[hsl(30,18%,90%)]";
+                  const previewBar = t === "dark" ? "bg-[hsl(240,10%,14%)]" : t === "light" ? "bg-[hsl(220,12%,82%)]" : "bg-[hsl(30,14%,80%)]";
+                  return (
+                    <motion.button
+                      key={t}
+                      onClick={() => setTheme(t)}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      className={`relative rounded-2xl p-3 border-2 transition-all duration-300 ${
+                        theme === t
+                          ? "border-primary bg-primary/10"
+                          : "border-border/30 hover:border-border/60 bg-secondary/20"
+                      }`}
+                    >
+                      <div className={`w-full aspect-[4/3] rounded-xl mb-2 ${previewBg}`}>
+                        <div className="p-2 space-y-1.5">
+                          <div className={`h-2 rounded-full w-3/4 ${previewBar}`} />
+                          <div className={`h-2 rounded-full w-1/2 ${previewBar}`} />
+                        </div>
                       </div>
-                    </div>
-                    <p className="text-sm font-medium text-foreground capitalize">{t} Mode</p>
-                    {theme === t && (
-                      <motion.div
-                        layoutId="profileThemeIndicator"
-                        className="absolute top-2 right-2 w-5 h-5 rounded-full bg-primary flex items-center justify-center"
-                        transition={{ type: "spring", bounce: 0.2 }}
-                      >
-                        <svg className="w-3 h-3 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                        </svg>
-                      </motion.div>
-                    )}
-                  </motion.button>
-                ))}
+                      <p className="text-sm font-medium text-foreground capitalize">{t} Mode</p>
+                      {theme === t && (
+                        <motion.div
+                          layoutId="profileThemeIndicator"
+                          className="absolute top-2 right-2 w-5 h-5 rounded-full bg-primary flex items-center justify-center"
+                          transition={{ type: "spring", bounce: 0.2 }}
+                        >
+                          <svg className="w-3 h-3 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                          </svg>
+                        </motion.div>
+                      )}
+                    </motion.button>
+                  );
+                })}
               </motion.div>
             </motion.div>
           )}

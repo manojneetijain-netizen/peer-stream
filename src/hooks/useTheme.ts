@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 
-type Theme = "dark" | "light";
+export type Theme = "dark" | "light" | "warm";
+
+const THEME_CLASSES: Theme[] = ["dark", "light", "warm"];
 
 export function useTheme() {
   const [theme, setTheme] = useState<Theme>(() => {
@@ -12,15 +14,19 @@ export function useTheme() {
 
   useEffect(() => {
     const root = document.documentElement;
-    if (theme === "light") {
-      root.classList.add("light");
-    } else {
-      root.classList.remove("light");
+    // Remove all theme classes, then add the current one (dark has no class)
+    THEME_CLASSES.forEach((t) => root.classList.remove(t));
+    if (theme !== "dark") {
+      root.classList.add(theme);
     }
     localStorage.setItem("pulse-theme", theme);
   }, [theme]);
 
-  const toggleTheme = () => setTheme((t) => (t === "dark" ? "light" : "dark"));
+  const cycleTheme = () =>
+    setTheme((t) => {
+      const idx = THEME_CLASSES.indexOf(t);
+      return THEME_CLASSES[(idx + 1) % THEME_CLASSES.length];
+    });
 
-  return { theme, toggleTheme };
+  return { theme, setTheme, cycleTheme };
 }

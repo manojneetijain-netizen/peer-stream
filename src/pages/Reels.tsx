@@ -1,16 +1,18 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Navigate, Link } from "react-router-dom";
-import { motion } from "framer-motion";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ArrowLeft, Loader2, Grid3X3, X } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useReels } from "@/hooks/useReels";
 import ReelCard from "@/components/reels/ReelCard";
+import ReelThumbnail from "@/components/reels/ReelThumbnail";
 import ReelUploader from "@/components/reels/ReelUploader";
 
 const Reels = () => {
   const { user, loading } = useAuth();
   const { reels, loading: reelsLoading, refetch } = useReels(user?.id);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [viewMode, setViewMode] = useState<"grid" | "fullscreen">("grid");
   const containerRef = useRef<HTMLDivElement>(null);
 
   const handleScroll = useCallback(() => {
@@ -28,6 +30,19 @@ const Reels = () => {
     return () => el.removeEventListener("scroll", handleScroll);
   }, [handleScroll]);
 
+  const openReel = (index: number) => {
+    setActiveIndex(index);
+    setViewMode("fullscreen");
+  };
+
+  // Scroll to selected reel when entering fullscreen
+  useEffect(() => {
+    if (viewMode !== "fullscreen" || !containerRef.current) return;
+    const el = containerRef.current;
+    const height = el.clientHeight;
+    el.scrollTo({ top: height * activeIndex, behavior: "instant" });
+  }, [viewMode]);
+
   if (loading) return null;
   if (!user) return <Navigate to="/auth" replace />;
 
@@ -39,7 +54,16 @@ const Reels = () => {
           <ArrowLeft className="w-5 h-5" />
         </Link>
         <h1 className="text-white font-bold text-lg drop-shadow">Reels</h1>
-        <div className="w-9" /> {/* spacer */}
+        {viewMode === "fullscreen" ? (
+          <button
+            onClick={() => setViewMode("grid")}
+            className="p-2 rounded-full bg-black/30 backdrop-blur-sm text-white"
+          >
+            <Grid3X3 className="w-5 h-5" />
+          </button>
+        ) : (
+          <div className="w-9" />
+        )}
       </div>
 
       {reelsLoading ? (
@@ -58,7 +82,27 @@ const Reels = () => {
             <p className="text-white/60 text-sm">Be the first to create a reel!</p>
           </motion.div>
         </div>
+      ) : viewMode === "grid" ? (
+        /* Grid Browse View */
+        <div className="h-full overflow-y-auto pt-16 pb-20 px-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+            {reels.map((reel, index) => (
+              <motion.div
+                key={reel.id}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: index * 0.03 }}
+              >
+                <ReelThumbnail
+                  videoUrl={reel.video_url}
+                  onClick={() => openReel(index)}
+                />
+              </motion.div>
+            ))}
+          </div>
+        </div>
       ) : (
+        /* Fullscreen Swipe View */
         <div
           ref={containerRef}
           className="h-full w-full overflow-y-scroll snap-y snap-mandatory scrollbar-hide"

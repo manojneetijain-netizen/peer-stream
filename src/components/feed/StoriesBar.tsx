@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Plus, X, Camera } from "lucide-react";
+import { Plus, X, Camera, Volume2, VolumeX } from "lucide-react";
 
 interface Story {
   id: string;
@@ -23,6 +23,7 @@ const StoryViewer = ({ stories, onClose }: { stories: Story[]; onClose: () => vo
   const [index, setIndex] = useState(0);
   const [progress, setProgress] = useState(0);
   const [fading, setFading] = useState(false);
+  const [muted, setMuted] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const timerRef = useRef<ReturnType<typeof setInterval>>();
 
@@ -87,12 +88,22 @@ const StoryViewer = ({ stories, onClose }: { stories: Story[]; onClose: () => vo
               ))}
             </div>
 
-            <button
-              onClick={() => { setFading(true); setTimeout(onClose, 400); }}
-              className="absolute top-4 right-2 z-20 p-2 rounded-full bg-background/50 text-foreground"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            <div className="absolute top-4 right-2 z-20 flex gap-2">
+              {isVideo && (
+                <button
+                  onClick={() => setMuted((m) => !m)}
+                  className="p-2 rounded-full bg-background/50 text-foreground"
+                >
+                  {muted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+                </button>
+              )}
+              <button
+                onClick={() => { setFading(true); setTimeout(onClose, 400); }}
+                className="p-2 rounded-full bg-background/50 text-foreground"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
             <AnimatePresence mode="wait">
               <motion.div
@@ -126,7 +137,7 @@ const StoryViewer = ({ stories, onClose }: { stories: Story[]; onClose: () => vo
                       src={story.image_url}
                       autoPlay
                       playsInline
-                      muted
+                      muted={muted}
                       onEnded={handleVideoEnd}
                       onTimeUpdate={handleVideoTimeUpdate}
                       className="w-full h-full object-contain"

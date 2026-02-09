@@ -53,12 +53,20 @@ const ProfileSettings = ({ userId, userEmail, profile }: ProfileSettingsProps) =
   const [displayName, setDisplayName] = useState(profile?.display_name || "");
   const [bio, setBio] = useState(profile?.bio || "");
   const [username, setUsername] = useState(profile?.username || "");
+  const [fullName, setFullName] = useState(profile?.full_name || "");
+  const [phone, setPhone] = useState(profile?.phone || "");
+  const [dob, setDob] = useState(profile?.date_of_birth || "");
+  const [gender, setGender] = useState(profile?.gender || "");
 
   useEffect(() => {
     if (profile) {
       setDisplayName(profile.display_name || "");
       setBio(profile.bio || "");
       setUsername(profile.username || "");
+      setFullName(profile.full_name || "");
+      setPhone(profile.phone || "");
+      setDob(profile.date_of_birth || "");
+      setGender(profile.gender || "");
     }
   }, [profile]);
 
@@ -71,7 +79,15 @@ const ProfileSettings = ({ userId, userEmail, profile }: ProfileSettingsProps) =
 
   const saveProfile = async () => {
     setSaving(true);
-    await supabase.from("profiles").update({ display_name: displayName, bio, username }).eq("user_id", userId);
+    await supabase.from("profiles").update({
+      display_name: displayName,
+      bio,
+      username,
+      full_name: fullName || null,
+      phone: phone || null,
+      date_of_birth: dob || null,
+      gender: gender || null,
+    } as any).eq("user_id", userId);
     toast.success("Profile updated");
     setSaving(false);
   };
@@ -134,9 +150,15 @@ const ProfileSettings = ({ userId, userEmail, profile }: ProfileSettingsProps) =
           {activeTab === "account" && (
             <motion.div key="account" variants={contentVariants} initial="initial" animate="animate" exit="exit" className="space-y-5">
               <motion.div variants={itemVariants} className="space-y-4">
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Display Name</label>
-                  <input value={displayName} onChange={(e) => setDisplayName(e.target.value)} className="w-full px-3 py-2.5 rounded-xl bg-secondary/40 border border-border/50 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all" />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Full Name</label>
+                    <input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Your full name" className="w-full px-3 py-2.5 rounded-xl bg-secondary/40 border border-border/50 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Display Name</label>
+                    <input value={displayName} onChange={(e) => setDisplayName(e.target.value)} className="w-full px-3 py-2.5 rounded-xl bg-secondary/40 border border-border/50 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all" />
+                  </div>
                 </div>
                 <div>
                   <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Username</label>
@@ -145,6 +167,26 @@ const ProfileSettings = ({ userId, userEmail, profile }: ProfileSettingsProps) =
                 <div>
                   <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Bio</label>
                   <textarea value={bio} onChange={(e) => setBio(e.target.value)} rows={3} className="w-full px-3 py-2.5 rounded-xl bg-secondary/40 border border-border/50 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all resize-none" />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Phone</label>
+                  <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Phone number" className="w-full px-3 py-2.5 rounded-xl bg-secondary/40 border border-border/50 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all" />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Date of Birth</label>
+                    <input type="date" value={dob} onChange={(e) => setDob(e.target.value)} className={`w-full px-3 py-2.5 rounded-xl bg-secondary/40 border border-border/50 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all ${!dob ? "text-muted-foreground" : "text-foreground"}`} />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Gender</label>
+                    <select value={gender} onChange={(e) => setGender(e.target.value)} className={`w-full px-3 py-2.5 rounded-xl bg-secondary/40 border border-border/50 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all ${!gender ? "text-muted-foreground" : "text-foreground"}`}>
+                      <option value="">Select gender</option>
+                      <option value="male">Male</option>
+                      <option value="female">Female</option>
+                      <option value="non-binary">Non-binary</option>
+                      <option value="prefer-not-to-say">Prefer not to say</option>
+                    </select>
+                  </div>
                 </div>
                 <p className="text-xs text-muted-foreground">Email: {userEmail}</p>
               </motion.div>

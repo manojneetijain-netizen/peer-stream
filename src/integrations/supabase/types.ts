@@ -617,9 +617,13 @@ export type Database = {
           bio: string | null
           cover_url: string | null
           created_at: string
+          date_of_birth: string | null
           display_name: string | null
+          full_name: string | null
+          gender: string | null
           id: string
           is_verified: boolean
+          phone: string | null
           pinned_post_id: string | null
           updated_at: string
           user_id: string
@@ -630,9 +634,13 @@ export type Database = {
           bio?: string | null
           cover_url?: string | null
           created_at?: string
+          date_of_birth?: string | null
           display_name?: string | null
+          full_name?: string | null
+          gender?: string | null
           id?: string
           is_verified?: boolean
+          phone?: string | null
           pinned_post_id?: string | null
           updated_at?: string
           user_id: string
@@ -643,9 +651,13 @@ export type Database = {
           bio?: string | null
           cover_url?: string | null
           created_at?: string
+          date_of_birth?: string | null
           display_name?: string | null
+          full_name?: string | null
+          gender?: string | null
           id?: string
           is_verified?: boolean
+          phone?: string | null
           pinned_post_id?: string | null
           updated_at?: string
           user_id?: string

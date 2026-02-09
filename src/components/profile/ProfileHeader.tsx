@@ -3,7 +3,8 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Camera, ImagePlus, BadgeCheck, Check, X, BarChart3 } from "lucide-react";
+import { Camera, ImagePlus, BadgeCheck, Check, X, BarChart3, Calendar, Phone, MapPin } from "lucide-react";
+import { format } from "date-fns";
 import type { Profile } from "@/hooks/useProfile";
 
 interface ProfileHeaderProps {
@@ -199,6 +200,27 @@ const ProfileHeader = ({
             {profile?.bio && (
               <p className="mt-2 text-sm text-muted-foreground max-w-md">{profile.bio}</p>
             )}
+
+            {/* Extra info badges */}
+            <div className="flex flex-wrap gap-3 mt-3">
+              {(profile as any)?.date_of_birth && (
+                <span className="flex items-center gap-1.5 text-xs text-muted-foreground bg-secondary/40 px-2.5 py-1 rounded-full">
+                  <Calendar className="w-3 h-3" />
+                  {format(new Date((profile as any).date_of_birth), "MMM d, yyyy")}
+                </span>
+              )}
+              {(profile as any)?.gender && (
+                <span className="flex items-center gap-1.5 text-xs text-muted-foreground bg-secondary/40 px-2.5 py-1 rounded-full capitalize">
+                  {(profile as any).gender}
+                </span>
+              )}
+              {(profile as any)?.phone && (
+                <span className="flex items-center gap-1.5 text-xs text-muted-foreground bg-secondary/40 px-2.5 py-1 rounded-full">
+                  <Phone className="w-3 h-3" />
+                  {(profile as any).phone}
+                </span>
+              )}
+            </div>
           </div>
         )}
 

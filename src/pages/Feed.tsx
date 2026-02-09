@@ -20,7 +20,6 @@ import MobileBottomNav from "@/components/feed/MobileBottomNav";
 import PullToRefresh from "@/components/feed/PullToRefresh";
 import GradientBackground from "@/components/feed/GradientBackground";
 import FloatingComposer from "@/components/feed/FloatingComposer";
-import FeedNavTabs from "@/components/feed/FeedNavTabs";
 import { Compass, Users, Loader2 } from "lucide-react";
 
 type FeedTab = "following" | "discover";
@@ -104,9 +103,6 @@ const Feed = () => {
               </motion.h2>
               <NotificationBell currentUserId={user.id} />
             </div>
-
-            {/* Horizontal nav tabs */}
-            <FeedNavTabs />
 
             <StoriesBar currentUserId={user.id} />
 

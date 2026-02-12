@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Bell, Heart, MessageCircle, UserPlus, Repeat2 } from "lucide-react";
+import { Bell, Heart, MessageCircle, UserPlus, Repeat2, UserCheck } from "lucide-react";
 
 interface Notification {
   id: string;
@@ -85,6 +85,7 @@ const NotificationBell = ({ currentUserId }: NotificationBellProps) => {
       case "like": return <Heart className="w-3.5 h-3.5 text-destructive" />;
       case "comment": return <MessageCircle className="w-3.5 h-3.5 text-accent" />;
       case "follow": return <UserPlus className="w-3.5 h-3.5 text-primary" />;
+      case "follow_request": return <UserCheck className="w-3.5 h-3.5 text-primary" />;
       case "repost": return <Repeat2 className="w-3.5 h-3.5 text-accent" />;
       default: return <Bell className="w-3.5 h-3.5 text-muted-foreground" />;
     }
@@ -95,6 +96,7 @@ const NotificationBell = ({ currentUserId }: NotificationBellProps) => {
       case "like": return "liked your post";
       case "comment": return "commented on your post";
       case "follow": return "started following you";
+      case "follow_request": return "requested to follow you";
       case "repost": return "reposted your post";
       default: return "sent you a notification";
     }

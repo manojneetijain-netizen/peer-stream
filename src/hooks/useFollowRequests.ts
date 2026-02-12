@@ -38,6 +38,12 @@ export function useFollowRequestStatus(
       requester_id: currentUserId,
       target_id: targetUserId,
     });
+    // Send a notification to the target user
+    await supabase.from("notifications").insert({
+      user_id: targetUserId,
+      from_user_id: currentUserId,
+      type: "follow_request",
+    });
     setRequestStatus("pending");
     setLoading(false);
   };

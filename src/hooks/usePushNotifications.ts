@@ -52,6 +52,10 @@ export function usePushNotifications(currentUserId: string | undefined) {
               title = "New Follower";
               body = `${fromName} started following you`;
               break;
+            case "follow_request":
+              title = "Follow Request";
+              body = `${fromName} requested to follow you`;
+              break;
             case "repost":
               title = "New Repost";
               body = `${fromName} reposted your post`;

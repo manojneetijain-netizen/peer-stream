@@ -20,6 +20,7 @@ import UserLists from "./pages/UserLists";
 import ExplorePage from "./pages/ExplorePage";
 // Settings is now integrated into Profile page
 import Reels from "./pages/Reels";
+import FollowRequests from "./pages/FollowRequests";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -46,6 +47,7 @@ const AnimatedRoutes = () => {
         <Route path="/lists" element={<PageTransition><UserLists /></PageTransition>} />
         <Route path="/explore" element={<PageTransition><ExplorePage /></PageTransition>} />
         <Route path="/reels" element={<Reels />} />
+        <Route path="/follow-requests" element={<PageTransition><FollowRequests /></PageTransition>} />
         <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
       </Routes>
     </AnimatePresence>

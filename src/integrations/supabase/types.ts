@@ -167,6 +167,33 @@ export type Database = {
         }
         Relationships: []
       }
+      follow_requests: {
+        Row: {
+          created_at: string
+          id: string
+          requester_id: string
+          status: string
+          target_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          requester_id: string
+          status?: string
+          target_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          requester_id?: string
+          status?: string
+          target_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       follower_snapshots: {
         Row: {
           created_at: string
@@ -622,6 +649,7 @@ export type Database = {
           full_name: string | null
           gender: string | null
           id: string
+          is_private: boolean
           is_verified: boolean
           phone: string | null
           pinned_post_id: string | null
@@ -639,6 +667,7 @@ export type Database = {
           full_name?: string | null
           gender?: string | null
           id?: string
+          is_private?: boolean
           is_verified?: boolean
           phone?: string | null
           pinned_post_id?: string | null
@@ -656,6 +685,7 @@ export type Database = {
           full_name?: string | null
           gender?: string | null
           id?: string
+          is_private?: boolean
           is_verified?: boolean
           phone?: string | null
           pinned_post_id?: string | null

@@ -154,7 +154,12 @@ const NotificationBell = ({ currentUserId }: NotificationBellProps) => {
                         <span className="font-medium">{n.from_user?.display_name || n.from_user?.username || "Someone"}</span>{" "}
                         {typeText(n.type)}
                       </p>
-                      <span className="text-[10px] text-muted-foreground">{timeAgo(n.created_at)}</span>
+                      {n.type === "follow_request" && (
+                        <Link to="/follow-requests" onClick={() => setOpen(false)} className="text-[10px] text-primary hover:underline">
+                          View requests
+                        </Link>
+                      )}
+                      <span className="text-[10px] text-muted-foreground block">{timeAgo(n.created_at)}</span>
                     </div>
                     {typeIcon(n.type)}
                   </div>

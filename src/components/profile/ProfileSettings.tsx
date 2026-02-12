@@ -1,12 +1,14 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useTheme } from "@/hooks/useTheme";
+import { usePendingRequests } from "@/hooks/useFollowRequests";
 import { toast } from "sonner";
 import {
   User, Bell, Shield, Palette,
   Heart, MessageCircle, UserPlus, Repeat2, Mail,
-  Eye, Lock, ChevronRight,
+  Eye, Lock, ChevronRight, Globe,
 } from "lucide-react";
 
 type Tab = "account" | "notifications" | "privacy" | "appearance";
@@ -45,10 +47,12 @@ const itemVariants = {
 
 const ProfileSettings = ({ userId, userEmail, profile }: ProfileSettingsProps) => {
   const { theme, setTheme } = useTheme();
+  const { requests } = usePendingRequests(userId);
   const [activeTab, setActiveTab] = useState<Tab>("account");
   const [prefs, setPrefs] = useState<Prefs>({ likes: true, comments: true, follows: true, messages: true, reposts: true });
   const [prefsLoading, setPrefsLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [isPrivate, setIsPrivate] = useState(profile?.is_private || false);
 
   const [displayName, setDisplayName] = useState(profile?.display_name || "");
   const [bio, setBio] = useState(profile?.bio || "");
@@ -67,6 +71,7 @@ const ProfileSettings = ({ userId, userEmail, profile }: ProfileSettingsProps) =
       setPhone(profile.phone || "");
       setDob(profile.date_of_birth || "");
       setGender(profile.gender || "");
+      setIsPrivate((profile as any).is_private || false);
     }
   }, [profile]);
 
@@ -236,8 +241,55 @@ const ProfileSettings = ({ userId, userEmail, profile }: ProfileSettingsProps) =
 
           {activeTab === "privacy" && (
             <motion.div key="privacy" variants={contentVariants} initial="initial" animate="animate" exit="exit" className="space-y-3">
+              {/* Public/Private toggle */}
+              <motion.div variants={itemVariants} className="flex items-center gap-3 py-2.5 px-3 rounded-xl hover:bg-secondary/20 transition-all">
+                {isPrivate ? <Lock className="w-4 h-4 text-muted-foreground shrink-0" /> : <Globe className="w-4 h-4 text-muted-foreground shrink-0" />}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground">Private Account</p>
+                  <p className="text-xs text-muted-foreground">
+                    {isPrivate ? "Only approved followers can see your posts" : "Anyone can see your posts and follow you"}
+                  </p>
+                </div>
+                <button
+                  onClick={async () => {
+                    const newVal = !isPrivate;
+                    setIsPrivate(newVal);
+                    await supabase.from("profiles").update({ is_private: newVal } as any).eq("user_id", userId);
+                    toast.success(newVal ? "Account set to private" : "Account set to public");
+                  }}
+                  className={`w-10 rounded-full transition-all duration-300 relative shrink-0 ${isPrivate ? "bg-primary" : "bg-secondary"}`}
+                  style={{ width: 40, height: 22 }}
+                >
+                  <motion.span
+                    animate={{ x: isPrivate ? 18 : 2 }}
+                    transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                    className="absolute top-0.5 w-[18px] h-[18px] rounded-full bg-foreground shadow-sm"
+                  />
+                </button>
+              </motion.div>
+
+              {/* Follow requests link */}
+              {isPrivate && (
+                <motion.div variants={itemVariants}>
+                  <Link to="/follow-requests" className="flex items-center gap-3 py-2.5 px-3 rounded-xl hover:bg-secondary/20 transition-all group">
+                    <UserPlus className="w-4 h-4 text-muted-foreground" />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-foreground">Follow Requests</p>
+                      <p className="text-xs text-muted-foreground">Review pending follow requests</p>
+                    </div>
+                    <span className="text-xs text-muted-foreground flex items-center gap-1 group-hover:text-foreground transition-colors">
+                      {requests.length > 0 && (
+                        <span className="bg-primary text-primary-foreground text-[10px] font-bold px-1.5 py-0.5 rounded-full">{requests.length}</span>
+                      )}
+                      <ChevronRight className="w-3 h-3" />
+                    </span>
+                  </Link>
+                </motion.div>
+              )}
+
+              {/* Other privacy items */}
               {[
-                { icon: Eye, title: "Profile Visibility", desc: "Your profile is visible to everyone", action: "Public" },
+                { icon: Eye, title: "Profile Visibility", desc: isPrivate ? "Only followers can see your full profile" : "Your profile is visible to everyone", action: isPrivate ? "Private" : "Public" },
                 { icon: Lock, title: "Direct Messages", desc: "Anyone can send you messages", action: "Everyone" },
                 { icon: Shield, title: "Blocked Users", desc: "Manage your blocked accounts", action: "Manage" },
               ].map((item, i) => (

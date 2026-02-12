@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Camera, ImagePlus, BadgeCheck, Check, X, BarChart3, Calendar, Phone, MapPin } from "lucide-react";
+import { Camera, ImagePlus, BadgeCheck, Check, X, BarChart3, Calendar, Phone, Lock, Clock } from "lucide-react";
 import { format } from "date-fns";
 import type { Profile } from "@/hooks/useProfile";
 
@@ -17,6 +17,10 @@ interface ProfileHeaderProps {
   currentUserId: string;
   targetId: string;
   refetch: () => void;
+  followRequestStatus?: "none" | "pending" | "accepted" | "rejected";
+  onSendFollowRequest?: () => void;
+  onCancelFollowRequest?: () => void;
+  followRequestLoading?: boolean;
 }
 
 const ProfileHeader = ({
@@ -29,6 +33,10 @@ const ProfileHeader = ({
   currentUserId,
   targetId,
   refetch,
+  followRequestStatus = "none",
+  onSendFollowRequest,
+  onCancelFollowRequest,
+  followRequestLoading = false,
 }: ProfileHeaderProps) => {
   const [editing, setEditing] = useState(false);
   const [displayName, setDisplayName] = useState("");
@@ -39,6 +47,7 @@ const ProfileHeader = ({
   const coverRef = useRef<HTMLInputElement>(null);
 
   const initials = (profile?.display_name || profile?.username || "?").slice(0, 2).toUpperCase();
+  const isPrivate = (profile as any)?.is_private === true;
 
   const startEdit = () => {
     setDisplayName(profile?.display_name || "");
@@ -76,6 +85,56 @@ const ProfileHeader = ({
     await supabase.from("profiles").update({ cover_url: publicUrl }).eq("user_id", currentUserId);
     setUploadingCover(false);
     refetch();
+  };
+
+  // Determine follow button behavior for non-own profiles
+  const renderFollowButton = () => {
+    if (isFollowing) {
+      return (
+        <button
+          onClick={toggleFollow}
+          disabled={followLoading}
+          className="rounded-full px-6 py-2 text-sm font-medium transition-all bg-secondary text-foreground hover:bg-destructive/20 hover:text-destructive"
+        >
+          Unfollow
+        </button>
+      );
+    }
+
+    if (isPrivate) {
+      if (followRequestStatus === "pending") {
+        return (
+          <button
+            onClick={onCancelFollowRequest}
+            disabled={followRequestLoading}
+            className="rounded-full px-6 py-2 text-sm font-medium transition-all bg-secondary text-foreground hover:bg-destructive/20 hover:text-destructive flex items-center gap-1.5"
+          >
+            <Clock className="w-3.5 h-3.5" />
+            Requested
+          </button>
+        );
+      }
+      return (
+        <button
+          onClick={onSendFollowRequest}
+          disabled={followRequestLoading}
+          className="rounded-full px-6 py-2 text-sm font-medium transition-all bg-primary text-primary-foreground hover:opacity-90 flex items-center gap-1.5"
+        >
+          <Lock className="w-3.5 h-3.5" />
+          Request Follow
+        </button>
+      );
+    }
+
+    return (
+      <button
+        onClick={toggleFollow}
+        disabled={followLoading}
+        className="rounded-full px-6 py-2 text-sm font-medium transition-all bg-primary text-primary-foreground hover:opacity-90"
+      >
+        Follow
+      </button>
+    );
   };
 
   return (
@@ -146,17 +205,7 @@ const ProfileHeader = ({
                 </Link>
               </>
             ) : (
-              <button
-                onClick={toggleFollow}
-                disabled={followLoading}
-                className={`rounded-full px-6 py-2 text-sm font-medium transition-all ${
-                  isFollowing
-                    ? "bg-secondary text-foreground hover:bg-destructive/20 hover:text-destructive"
-                    : "bg-primary text-primary-foreground hover:opacity-90"
-                }`}
-              >
-                {isFollowing ? "Unfollow" : "Follow"}
-              </button>
+              renderFollowButton()
             )}
           </div>
         </div>
@@ -193,6 +242,9 @@ const ProfileHeader = ({
                 {profile?.display_name || profile?.username || "Anonymous"}
               </h1>
               {profile?.is_verified && <BadgeCheck className="w-5 h-5 text-primary" />}
+              {isPrivate && (
+                <span title="Private account"><Lock className="w-4 h-4 text-muted-foreground" /></span>
+              )}
             </div>
             {profile?.username && (
               <p className="text-sm text-muted-foreground">@{profile.username}</p>

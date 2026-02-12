@@ -3,6 +3,7 @@ import { useParams, Navigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile, useProfileStats, useIsFollowing } from "@/hooks/useProfile";
+import { useFollowRequestStatus } from "@/hooks/useFollowRequests";
 import { supabase } from "@/integrations/supabase/client";
 import { useFeed } from "@/hooks/useFeed";
 import PostCard from "@/components/feed/PostCard";
@@ -10,7 +11,7 @@ import ProfileHeader from "@/components/profile/ProfileHeader";
 import ProfileSettings from "@/components/profile/ProfileSettings";
 import AnimatedPost from "@/components/feed/AnimatedPost";
 import MobileBottomNav from "@/components/feed/MobileBottomNav";
-import { ArrowLeft, Pin, LogOut } from "lucide-react";
+import { ArrowLeft, Pin, LogOut, Lock } from "lucide-react";
 
 const Profile = () => {
   const { userId } = useParams<{ userId: string }>();
@@ -21,12 +22,11 @@ const Profile = () => {
   const { profile, loading, refetch } = useProfile(targetId);
   const stats = useProfileStats(targetId);
   const { isFollowing, toggle: toggleFollow, loading: followLoading } = useIsFollowing(user?.id, targetId);
+  const { requestStatus, sendRequest, cancelRequest, loading: reqLoading } = useFollowRequestStatus(user?.id, targetId);
   const { posts, refetch: refetchPosts } = useFeed(user?.id, "discover");
 
   const [pinnedPostId, setPinnedPostId] = useState<string | null>(null);
-  const [activeSection, setActiveSection] = useState<"posts" | "settings">(
-    isOwnProfile ? "posts" : "posts"
-  );
+  const [activeSection, setActiveSection] = useState<"posts" | "settings">("posts");
 
   useEffect(() => {
     if (profile) {
@@ -36,6 +36,9 @@ const Profile = () => {
 
   if (authLoading || loading) return null;
   if (!user) return <Navigate to="/auth" replace />;
+
+  const isPrivate = (profile as any)?.is_private === true;
+  const canSeePosts = isOwnProfile || isFollowing || !isPrivate;
 
   const userPosts = posts.filter((p) => p.user_id === targetId);
   const pinnedPost = pinnedPostId ? userPosts.find((p) => p.id === pinnedPostId) : null;
@@ -67,7 +70,6 @@ const Profile = () => {
             <button
               onClick={signOut}
               className="p-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
-              title="Sign out"
             >
               <LogOut className="w-4 h-4" />
             </button>
@@ -86,6 +88,10 @@ const Profile = () => {
           currentUserId={user.id}
           targetId={targetId!}
           refetch={refetch}
+          followRequestStatus={requestStatus}
+          onSendFollowRequest={sendRequest}
+          onCancelFollowRequest={cancelRequest}
+          followRequestLoading={reqLoading}
         />
 
         {/* Section toggle for own profile */}
@@ -131,42 +137,52 @@ const Profile = () => {
 
         {/* Posts section */}
         {(activeSection === "posts" || !isOwnProfile) && (
-          <div className="space-y-4">
-            {pinnedPost && (
-              <AnimatedPost index={0}>
-                <PostCard
-                  post={pinnedPost}
-                  currentUserId={user.id}
-                  onUpdate={refetchPosts}
-                  isPinned
-                  onPin={() => {}}
-                  onUnpin={isOwnProfile ? unpinPost : undefined}
-                />
-              </AnimatedPost>
-            )}
-
-            {otherPosts.length > 0 ? (
-              otherPosts.map((p, i) => (
-                <AnimatedPost key={p.id} index={i + 1}>
-                  <PostCard
-                    post={p}
-                    currentUserId={user.id}
-                    onUpdate={refetchPosts}
-                    onPin={isOwnProfile ? () => pinPost(p.id) : undefined}
-                    onUnpin={undefined}
-                  />
-                </AnimatedPost>
-              ))
-            ) : (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="glass rounded-2xl p-8 text-center"
-              >
-                <p className="text-muted-foreground text-sm">No posts yet</p>
+          <>
+            {!canSeePosts ? (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass rounded-2xl p-10 text-center space-y-3">
+                <Lock className="w-10 h-10 mx-auto text-muted-foreground" />
+                <h3 className="text-foreground font-semibold">This Account is Private</h3>
+                <p className="text-muted-foreground text-sm">Follow this account to see their posts</p>
               </motion.div>
+            ) : (
+              <div className="space-y-4">
+                {pinnedPost && (
+                  <AnimatedPost index={0}>
+                    <PostCard
+                      post={pinnedPost}
+                      currentUserId={user.id}
+                      onUpdate={refetchPosts}
+                      isPinned
+                      onPin={() => {}}
+                      onUnpin={isOwnProfile ? unpinPost : undefined}
+                    />
+                  </AnimatedPost>
+                )}
+
+                {otherPosts.length > 0 ? (
+                  otherPosts.map((p, i) => (
+                    <AnimatedPost key={p.id} index={i + 1}>
+                      <PostCard
+                        post={p}
+                        currentUserId={user.id}
+                        onUpdate={refetchPosts}
+                        onPin={isOwnProfile ? () => pinPost(p.id) : undefined}
+                        onUnpin={undefined}
+                      />
+                    </AnimatedPost>
+                  ))
+                ) : (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="glass rounded-2xl p-8 text-center"
+                  >
+                    <p className="text-muted-foreground text-sm">No posts yet</p>
+                  </motion.div>
+                )}
+              </div>
             )}
-          </div>
+          </>
         )}
       </main>
       <MobileBottomNav />

@@ -50,13 +50,13 @@ const PostSearch = () => {
 
   return (
     <div className="relative">
-      <div className="flex items-center gap-2 glass rounded-xl px-3 py-2">
+      <div className="flex items-center gap-2 glass rounded-xl px-3 py-2.5">
         <Search className="w-4 h-4 text-muted-foreground shrink-0" />
         <input
           value={query}
           onChange={(e) => handleSearch(e.target.value)}
           onFocus={() => query.trim() && setOpen(true)}
-          placeholder="Search posts, hashtags, users..."
+          placeholder="Search Pulse"
           className="flex-1 bg-transparent text-foreground text-sm placeholder:text-muted-foreground focus:outline-none"
         />
         {query && (

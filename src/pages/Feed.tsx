@@ -20,7 +20,7 @@ import MobileBottomNav from "@/components/feed/MobileBottomNav";
 import PullToRefresh from "@/components/feed/PullToRefresh";
 import GradientBackground from "@/components/feed/GradientBackground";
 import FloatingComposer from "@/components/feed/FloatingComposer";
-import { Compass, Users, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 type FeedTab = "following" | "discover";
 
@@ -92,52 +92,59 @@ const Feed = () => {
       <main className="flex-1 min-w-0">
         <PullToRefresh onRefresh={refetch}>
           <div className="max-w-[680px] mx-auto px-4 py-6 lg:py-6 space-y-7 lg:mt-0 mt-14 pb-24 lg:pb-6">
-            {/* Header with notification bell (desktop) */}
-            <div className="hidden lg:flex items-center justify-between mb-2">
-              <motion.h2
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="text-xl font-bold text-foreground"
-              >
-                Home
-              </motion.h2>
-              <NotificationBell currentUserId={user.id} />
+            {/* Header */}
+            <div className="flex items-center justify-between mb-2">
+              <div>
+                <motion.h2
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-2xl font-black italic uppercase tracking-wide text-foreground"
+                >
+                  Feed
+                </motion.h2>
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.1 }}
+                  className="text-xs text-muted-foreground"
+                >
+                  Premium content curated for you
+                </motion.p>
+              </div>
+              <div className="flex items-center gap-2">
+                {/* Feed tabs as pills */}
+                <div className="flex rounded-full overflow-hidden bg-secondary/40 border border-border/30 p-0.5">
+                  {([
+                    { key: "discover" as FeedTab, label: "For You" },
+                    { key: "following" as FeedTab, label: "Following" },
+                  ]).map(({ key, label }) => (
+                    <button
+                      key={key}
+                      onClick={() => setTab(key)}
+                      className={`relative px-4 py-1.5 text-xs font-semibold rounded-full transition-all duration-300 ${
+                        tab === key
+                          ? "text-foreground"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      {tab === key && (
+                        <motion.div
+                          layoutId="feedTab"
+                          className="absolute inset-0 bg-secondary border border-border/50 rounded-full"
+                          transition={{ type: "spring", bounce: 0.2, duration: 0.5 }}
+                        />
+                      )}
+                      <span className="relative z-10">{label}</span>
+                    </button>
+                  ))}
+                </div>
+                <div className="hidden lg:block">
+                  <NotificationBell currentUserId={user.id} />
+                </div>
+              </div>
             </div>
 
             <StoriesBar currentUserId={user.id} />
-
-            {/* Feed tabs */}
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.15 }}
-              className="flex rounded-3xl overflow-hidden island-card !p-0"
-            >
-              {([
-                { key: "discover" as FeedTab, label: "Discover", icon: Compass },
-                { key: "following" as FeedTab, label: "Following", icon: Users },
-              ]).map(({ key, label, icon: Icon }) => (
-                <button
-                  key={key}
-                  onClick={() => setTab(key)}
-                  className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium transition-all duration-300 relative ${
-                    tab === key
-                      ? "text-foreground"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  <Icon className={`w-4 h-4 transition-transform duration-200 ${tab === key ? "scale-110" : ""}`} />
-                  {label}
-                  {tab === key && (
-                    <motion.div
-                      layoutId="feedTab"
-                      className="absolute inset-0 bg-gradient-to-r from-pulse-blue/20 to-pulse-cyan/20 rounded-3xl"
-                      transition={{ type: "spring", bounce: 0.2, duration: 0.5 }}
-                    />
-                  )}
-                </button>
-              ))}
-            </motion.div>
 
             {feedLoading ? (
               <div className="flex justify-center py-16">

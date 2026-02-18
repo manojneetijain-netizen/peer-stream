@@ -1,13 +1,14 @@
 import { useState, useEffect, useCallback } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import ThemeToggle from "@/components/feed/ThemeToggle";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  Home, Compass, Bookmark, MessageCircle,
-  List, LogOut, TrendingUp, Film,
+  Home, Compass, Bell, User, MessageCircle,
+  Bookmark, List, LogOut, TrendingUp, Film,
+  Plus, MoreHorizontal,
 } from "lucide-react";
 
 interface FeedSidebarProps {
@@ -17,9 +18,11 @@ interface FeedSidebarProps {
 }
 
 const navItems = [
-  { label: "Feed", icon: Home, path: "/feed" },
-  { label: "Reels", icon: Film, path: "/reels" },
+  { label: "Home", icon: Home, path: "/feed" },
   { label: "Explore", icon: Compass, path: "/explore" },
+  { label: "Notifications", icon: Bell, path: "/settings/notifications", badge: true },
+  { label: "Profile", icon: User, path: "/profile" },
+  { label: "Reels", icon: Film, path: "/reels" },
   { label: "Trending", icon: TrendingUp, path: "/trending" },
   { label: "Bookmarks", icon: Bookmark, path: "/bookmarks" },
   { label: "Lists", icon: List, path: "/lists" },
@@ -27,8 +30,10 @@ const navItems = [
 
 const FeedSidebar = ({ currentUserId, onMessagesClick, profile }: FeedSidebarProps) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { signOut } = useAuth();
   const [unreadMessages, setUnreadMessages] = useState(0);
+  const [unreadNotifs, setUnreadNotifs] = useState(0);
 
   const fetchUnread = useCallback(async () => {
     if (!currentUserId) return;
@@ -38,6 +43,13 @@ const FeedSidebar = ({ currentUserId, onMessagesClick, profile }: FeedSidebarPro
       .eq("receiver_id", currentUserId)
       .eq("read", false);
     setUnreadMessages(count ?? 0);
+
+    const { count: notifCount } = await supabase
+      .from("notifications")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", currentUserId)
+      .eq("read", false);
+    setUnreadNotifs(notifCount ?? 0);
   }, [currentUserId]);
 
   useEffect(() => {
@@ -46,6 +58,9 @@ const FeedSidebar = ({ currentUserId, onMessagesClick, profile }: FeedSidebarPro
     const channel = supabase
       .channel("sidebar-unread")
       .on("postgres_changes", { event: "*", schema: "public", table: "messages", filter: `receiver_id=eq.${currentUserId}` }, () => {
+        fetchUnread();
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "notifications", filter: `user_id=eq.${currentUserId}` }, () => {
         fetchUnread();
       })
       .subscribe();
@@ -57,30 +72,45 @@ const FeedSidebar = ({ currentUserId, onMessagesClick, profile }: FeedSidebarPro
   return (
     <aside className="sticky top-0 h-screen w-64 flex flex-col py-6 px-4">
       {/* Logo */}
-      <Link to="/" className="mb-8 px-3">
-        <span className="text-2xl font-bold gradient-text tracking-tight">Pulse</span>
+      <Link to="/" className="mb-8 px-3 flex items-center gap-2">
+        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+          <svg viewBox="0 0 24 24" className="w-4 h-4 text-primary-foreground" fill="currentColor">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+          </svg>
+        </div>
+        <span className="text-xl font-black tracking-tight text-foreground uppercase">Pulse</span>
       </Link>
 
       {/* Nav */}
-      <nav className="flex-1 space-y-1">
+      <nav className="flex-1 space-y-0.5">
         {navItems.map((item, i) => {
-          const isActive = location.pathname === item.path;
+          const profilePath = item.path === "/profile" ? `/profile/${currentUserId}` : item.path;
+          const isActive = item.path === "/profile"
+            ? location.pathname.startsWith("/profile")
+            : location.pathname === item.path;
+          const hasBadge = item.badge && unreadNotifs > 0;
+
           return (
             <motion.div
-              key={item.path}
+              key={item.path + item.label}
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: i * 0.05, duration: 0.3 }}
+              transition={{ delay: i * 0.04, duration: 0.3 }}
             >
               <Link
-                to={item.path}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group ${
+                to={profilePath}
+                className={`flex items-center gap-3.5 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 group ${
                   isActive
-                    ? "glass text-foreground glow-blue"
-                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+                    ? "text-foreground"
+                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/40"
                 }`}
               >
-                <item.icon className={`w-5 h-5 transition-transform duration-200 group-hover:scale-110 ${isActive ? "text-primary" : ""}`} />
+                <div className="relative">
+                  <item.icon className={`w-5 h-5 transition-transform duration-200 group-hover:scale-110 ${isActive ? "text-foreground" : ""}`} />
+                  {hasBadge && (
+                    <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-destructive border-2 border-background" />
+                  )}
+                </div>
                 {item.label}
               </Link>
             </motion.div>
@@ -91,22 +121,16 @@ const FeedSidebar = ({ currentUserId, onMessagesClick, profile }: FeedSidebarPro
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: navItems.length * 0.05, duration: 0.3 }}
+          transition={{ delay: navItems.length * 0.04, duration: 0.3 }}
         >
           <button
             onClick={onMessagesClick}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-all duration-200 group"
+            className="w-full flex items-center gap-3.5 px-3 py-2.5 rounded-xl text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-secondary/40 transition-all duration-200 group"
           >
             <div className="relative">
               <MessageCircle className="w-5 h-5 transition-transform duration-200 group-hover:scale-110" />
               {unreadMessages > 0 && (
-                <motion.span
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  className="absolute -top-1.5 -right-2 min-w-[16px] h-4 px-1 rounded-full bg-destructive text-destructive-foreground text-[9px] font-bold flex items-center justify-center"
-                >
-                  {unreadMessages > 99 ? "99+" : unreadMessages}
-                </motion.span>
+                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-destructive border-2 border-background" />
               )}
             </div>
             Messages
@@ -114,19 +138,31 @@ const FeedSidebar = ({ currentUserId, onMessagesClick, profile }: FeedSidebarPro
         </motion.div>
       </nav>
 
+      {/* Create Pulse button */}
+      <motion.button
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4 }}
+        onClick={() => navigate("/create")}
+        className="mb-4 w-full flex items-center justify-center gap-2 px-4 py-3 rounded-full bg-gradient-to-r from-primary to-accent text-primary-foreground text-sm font-bold hover:opacity-90 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-[0_4px_20px_hsl(var(--pulse-blue)/0.3)]"
+      >
+        <Plus className="w-4 h-4" />
+        CREATE PULSE
+      </motion.button>
+
       {/* Theme toggle */}
-      <ThemeToggle className="mb-2" />
+      <ThemeToggle className="mb-3" />
 
       {/* User profile card */}
       <div className="island-card p-3 flex items-center gap-3">
         <Link to={`/profile/${currentUserId}`}>
-          <Avatar className="w-10 h-10 ring-2 ring-primary/30 transition-all duration-200 hover:ring-primary/60">
+          <Avatar className="w-10 h-10 ring-2 ring-primary/20 transition-all duration-200 hover:ring-primary/50">
             <AvatarImage src={profile?.avatar_url || undefined} />
             <AvatarFallback className="bg-secondary text-foreground text-xs">{initials}</AvatarFallback>
           </Avatar>
         </Link>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-foreground truncate">{profile?.display_name || profile?.username || "Anonymous"}</p>
+          <p className="text-sm font-semibold text-foreground truncate">{profile?.display_name || profile?.username || "Anonymous"}</p>
           {profile?.username && <p className="text-xs text-muted-foreground truncate">@{profile.username}</p>}
         </div>
         <button
@@ -134,7 +170,7 @@ const FeedSidebar = ({ currentUserId, onMessagesClick, profile }: FeedSidebarPro
           className="p-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all duration-200"
           title="Sign out"
         >
-          <LogOut className="w-4 h-4" />
+          <MoreHorizontal className="w-4 h-4" />
         </button>
       </div>
     </aside>

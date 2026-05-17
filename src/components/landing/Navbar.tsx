@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import ThemeToggle from "@/components/feed/ThemeToggle";
+import pulseLogo from "@/assets/logo-pulse.png";
 
 const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);

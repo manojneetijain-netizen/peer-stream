@@ -57,25 +57,30 @@ const ProfileSettings = ({ userId, userEmail, profile }: ProfileSettingsProps) =
   const [displayName, setDisplayName] = useState(profile?.display_name || "");
   const [bio, setBio] = useState(profile?.bio || "");
   const [username, setUsername] = useState(profile?.username || "");
-  const [fullName, setFullName] = useState(profile?.full_name || "");
-  const [phone, setPhone] = useState(profile?.phone || "");
-  const [dob, setDob] = useState(profile?.date_of_birth || "");
-  const [gender, setGender] = useState(profile?.gender || "");
+  const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [dob, setDob] = useState("");
+  const [gender, setGender] = useState("");
 
   useEffect(() => {
     if (profile) {
       setDisplayName(profile.display_name || "");
       setBio(profile.bio || "");
       setUsername(profile.username || "");
-      setFullName(profile.full_name || "");
-      setPhone(profile.phone || "");
-      setDob(profile.date_of_birth || "");
-      setGender(profile.gender || "");
       setIsPrivate((profile as any).is_private || false);
     }
   }, [profile]);
 
   useEffect(() => {
+    supabase.rpc("get_my_private_profile" as any).then(({ data }) => {
+      const row = Array.isArray(data) ? data[0] : null;
+      if (row) {
+        setFullName((row as any).full_name || "");
+        setPhone((row as any).phone || "");
+        setDob((row as any).date_of_birth || "");
+        setGender((row as any).gender || "");
+      }
+    });
     supabase.from("notification_preferences").select("*").eq("user_id", userId).maybeSingle().then(({ data }) => {
       if (data) setPrefs({ likes: data.likes, comments: data.comments, follows: data.follows, messages: data.messages, reposts: data.reposts });
       setPrefsLoading(false);

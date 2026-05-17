@@ -62,15 +62,25 @@ const Settings = () => {
 
   useEffect(() => {
     if (!user) return;
-    supabase.from("profiles").select("*").eq("user_id", user.id).single().then(({ data }) => {
-      if (data) {
-        setProfile(data);
-        setDisplayName(data.display_name || "");
-        setBio(data.bio || "");
-        setUsername(data.username || "");
-        setFullName(data.full_name || "");
-        setPhone(data.phone || "");
-        setIsPrivate((data as any).is_private || false);
+    supabase
+      .from("profiles")
+      .select("id, user_id, username, display_name, avatar_url, cover_url, bio, is_verified, is_private, pinned_post_id, created_at, updated_at")
+      .eq("user_id", user.id)
+      .single()
+      .then(({ data }) => {
+        if (data) {
+          setProfile(data as any);
+          setDisplayName(data.display_name || "");
+          setBio(data.bio || "");
+          setUsername(data.username || "");
+          setIsPrivate((data as any).is_private || false);
+        }
+      });
+    supabase.rpc("get_my_private_profile" as any).then(({ data }) => {
+      const row = Array.isArray(data) ? data[0] : null;
+      if (row) {
+        setFullName((row as any).full_name || "");
+        setPhone((row as any).phone || "");
       }
     });
     supabase.from("notification_preferences").select("*").eq("user_id", user.id).maybeSingle().then(({ data }) => {

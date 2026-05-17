@@ -873,7 +873,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_my_private_profile: {
+        Args: never
+        Returns: {
+          date_of_birth: string
+          full_name: string
+          gender: string
+          phone: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

@@ -47,6 +47,7 @@ const PostCard = ({ post, currentUserId, onUpdate, isBlocked, isMuted, onBlock, 
   const [deleting, setDeleting] = useState(false);
   const [images, setImages] = useState<string[]>([]);
   const [authorVerified, setAuthorVerified] = useState(false);
+  const [revealed, setRevealed] = useState(false);
 
   const isOwner = post.user_id === currentUserId;
   const showBlockMute = !isOwner && onBlock && onUnblock && onMute && onUnmute;
@@ -190,14 +191,44 @@ const PostCard = ({ post, currentUserId, onUpdate, isBlocked, isMuted, onBlock, 
       </div>
 
       {/* Content */}
-      {post.content && <HashtagRenderer content={post.content} />}
-      {images.length > 0 && <ImageCarousel images={images} />}
-      {(post as any).video_url && (
-        <div className="relative mt-3 w-full overflow-hidden rounded-xl bg-black/90">
-          <video src={(post as any).video_url} muted loop playsInline autoPlay className="absolute inset-0 w-full h-full object-cover blur-2xl opacity-40 scale-110 pointer-events-none" />
-          <video src={(post as any).video_url} controls className="relative w-full max-h-[500px] object-contain z-10" />
-        </div>
-      )}
+      <div className="relative">
+        {(post as any).is_flagged && !revealed && (
+          <div className="absolute inset-0 z-20 backdrop-blur-xl bg-background/40 flex flex-col items-center justify-center rounded-xl border border-destructive/20 p-4 min-h-[150px]">
+            <Flag className="w-8 h-8 text-destructive mb-2" />
+            <p className="text-sm font-semibold text-foreground mb-1">Sensitive Content</p>
+            <p className="text-xs text-muted-foreground mb-3 text-center">This post was flagged by our automated moderation system.</p>
+            <button onClick={() => setRevealed(true)} className="px-4 py-1.5 rounded-full bg-secondary hover:bg-secondary/80 text-xs font-medium transition-colors">Show Anyway</button>
+          </div>
+        )}
+        
+        {post.content && <HashtagRenderer content={post.content} />}
+        {images.length > 0 && <ImageCarousel images={images} />}
+        {(post as any).video_url && (
+          <div className="relative mt-3 w-full overflow-hidden rounded-xl bg-black/90">
+            <video src={(post as any).video_url} muted loop playsInline autoPlay className="absolute inset-0 w-full h-full object-cover blur-2xl opacity-40 scale-110 pointer-events-none" />
+            <video src={(post as any).video_url} controls className="relative w-full max-h-[500px] object-contain z-10" />
+          </div>
+        )}
+        
+        {(post as any).link_metadata && (
+          <a href={(post as any).link_metadata.url} target="_blank" rel="noopener noreferrer" className="mt-3 block border border-border/50 rounded-xl overflow-hidden hover:border-border transition-colors group relative z-10">
+            {(post as any).link_metadata.image && (
+              <div className="w-full h-48 overflow-hidden bg-secondary">
+                <img src={(post as any).link_metadata.image} alt="Preview" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+              </div>
+            )}
+            <div className="p-3 bg-secondary/20">
+              <h4 className="text-sm font-semibold text-foreground line-clamp-1">{(post as any).link_metadata.title || "Link"}</h4>
+              <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{(post as any).link_metadata.description}</p>
+              <p className="text-[10px] text-muted-foreground mt-2 truncate">
+                {(() => {
+                  try { return new URL((post as any).link_metadata.url).hostname; } catch(e) { return (post as any).link_metadata.url; }
+                })()}
+              </p>
+            </div>
+          </a>
+        )}
+      </div>
       <PollDisplay postId={post.id} currentUserId={currentUserId} />
       {(post as any).quoted_post_id && <QuotedPostCard quotedPostId={(post as any).quoted_post_id} />}
 

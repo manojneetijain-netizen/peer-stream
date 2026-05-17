@@ -86,6 +86,34 @@ const CreatePost = ({ userId, onCreated }: CreatePostProps) => {
       uploadedUrls.push(publicUrl);
     }
 
+    // Check Moderation
+    let isFlagged = false;
+    if (content.trim()) {
+      try {
+        const { data: modData } = await supabase.functions.invoke('moderate-post', {
+          body: { record: { content: content.trim() } }
+        });
+        if (modData?.flagged) isFlagged = true;
+      } catch (e) {
+        console.error("Moderation error", e);
+      }
+    }
+
+    // Fetch Link Metadata
+    let linkMetadata = null;
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    const urls = content.match(urlRegex);
+    if (urls && urls.length > 0) {
+      try {
+        const { data: metaData } = await supabase.functions.invoke('fetch-metadata', {
+          body: { url: urls[0] }
+        });
+        if (metaData && !metaData.error) linkMetadata = metaData;
+      } catch (e) {
+        console.error("Metadata error", e);
+      }
+    }
+
     // Create post
     const { data: post } = await (supabase
       .from("posts")
@@ -95,6 +123,8 @@ const CreatePost = ({ userId, onCreated }: CreatePostProps) => {
         image_url: uploadedUrls[0] || null,
         video_url: videoUrl,
         scheduled_at: scheduledAt?.toISOString() || null,
+        is_flagged: isFlagged,
+        link_metadata: linkMetadata,
       } as any)
       .select("id")
       .single()) as { data: { id: string } | null };

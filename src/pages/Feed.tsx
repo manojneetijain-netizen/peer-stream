@@ -56,8 +56,32 @@ const Feed = () => {
     return (
       <div className="min-h-screen bg-background flex">
         <GradientBackground />
-        <FeedSidebar currentUserId={user.id} onMessagesClick={() => setShowMessages(false)} profile={profile} />
-        <main className="flex-1 max-w-2xl mx-auto">
+        
+        {/* Left Sidebar — parallax island */}
+        <div className="hidden lg:block">
+          <div className="fixed top-0 left-0 h-screen py-4 pl-4 z-40">
+            <div className="island-sidebar h-full">
+              <FeedSidebar 
+                currentUserId={user.id} 
+                onMessagesClick={() => setShowMessages(false)} 
+                profile={profile} 
+                isMessagesView={true} 
+                onNavClick={() => setShowMessages(false)}
+              />
+            </div>
+          </div>
+          <div className="w-[272px] shrink-0" /> {/* spacer */}
+        </div>
+
+        {/* Mobile Header (reusing same style from feed) */}
+        <div className="lg:hidden fixed top-0 left-0 right-0 z-50 glass-surface">
+          <div className="px-4 h-14 flex items-center justify-between">
+            <span className="text-lg font-bold gradient-text">Messages</span>
+            <button onClick={() => setShowMessages(false)} className="text-sm font-medium text-muted-foreground">Back</button>
+          </div>
+        </div>
+
+        <main className="flex-1 max-w-4xl mx-auto w-full pt-14 lg:pt-0">
           <MessagesPage currentUserId={user.id} onBack={() => setShowMessages(false)} isOnline={isOnline} isTypingTo={isTypingTo} setTyping={setTyping} />
         </main>
       </div>

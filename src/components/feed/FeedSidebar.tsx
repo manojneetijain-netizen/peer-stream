@@ -16,6 +16,8 @@ interface FeedSidebarProps {
   currentUserId: string;
   onMessagesClick: () => void;
   profile?: { display_name?: string | null; username?: string | null; avatar_url?: string | null } | null;
+  isMessagesView?: boolean;
+  onNavClick?: () => void;
 }
 
 const navItems = [
@@ -29,7 +31,7 @@ const navItems = [
   { label: "Lists", icon: List, path: "/lists" },
 ];
 
-const FeedSidebar = ({ currentUserId, onMessagesClick, profile }: FeedSidebarProps) => {
+const FeedSidebar = ({ currentUserId, onMessagesClick, profile, isMessagesView, onNavClick }: FeedSidebarProps) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { signOut } = useAuth();
@@ -71,9 +73,9 @@ const FeedSidebar = ({ currentUserId, onMessagesClick, profile }: FeedSidebarPro
   const initials = (profile?.display_name || profile?.username || "?").slice(0, 2).toUpperCase();
 
   return (
-    <aside className="sticky top-0 h-full w-64 flex flex-col py-4 px-4 min-h-0">
+    <aside className="sticky top-0 h-full max-h-[100dvh] w-64 flex flex-col py-5 px-4 min-h-0">
       {/* Logo */}
-      <Link to="/" className="mb-3 px-3 flex items-center gap-2 shrink-0">
+      <Link to="/" onClick={onNavClick} className="mb-3 px-3 flex items-center gap-2 shrink-0">
         <img src={pulseLogo} alt="Pulse logo" width={100} height={100} className="drop-shadow-[0_0_18px_hsl(var(--primary)/0.55)]" style={{ width: 100, height: 100 }} />
         <span className="text-2xl font-black tracking-tight text-foreground uppercase">Pulse</span>
       </Link>
@@ -82,9 +84,9 @@ const FeedSidebar = ({ currentUserId, onMessagesClick, profile }: FeedSidebarPro
       <nav className="flex-1 min-h-0 overflow-y-auto space-y-2 pr-1 mt-4">
         {navItems.map((item, i) => {
           const profilePath = item.path === "/profile" ? `/profile/${currentUserId}` : item.path;
-          const isActive = item.path === "/profile"
+          const isActive = !isMessagesView && (item.path === "/profile"
             ? location.pathname.startsWith("/profile")
-            : location.pathname === item.path;
+            : location.pathname === item.path || (item.path === "/feed" && location.pathname === "/"));
           const hasBadge = item.badge && unreadNotifs > 0;
 
           return (
@@ -96,6 +98,7 @@ const FeedSidebar = ({ currentUserId, onMessagesClick, profile }: FeedSidebarPro
             >
               <Link
                 to={profilePath}
+                onClick={onNavClick}
                 className={`flex items-center gap-4 px-4 py-3.5 rounded-xl text-base font-bold transition-all duration-200 group ${isActive
                   ? "text-foreground bg-secondary/20"
                   : "text-muted-foreground hover:text-foreground hover:bg-secondary/40"
@@ -121,15 +124,18 @@ const FeedSidebar = ({ currentUserId, onMessagesClick, profile }: FeedSidebarPro
         >
           <button
             onClick={onMessagesClick}
-            className="w-full flex items-center gap-3.5 px-3 py-2.5 rounded-xl text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-secondary/40 transition-all duration-200 group"
+            className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-xl text-base font-bold transition-all duration-200 group ${isMessagesView
+              ? "text-foreground bg-secondary/20"
+              : "text-muted-foreground hover:text-foreground hover:bg-secondary/40"
+              }`}
           >
             <div className="relative">
-              <MessageCircle className="w-5 h-5 transition-transform duration-200 group-hover:scale-110" />
+              <MessageCircle className={`w-6 h-6 transition-transform duration-200 group-hover:scale-110 ${isMessagesView ? "text-foreground" : ""}`} />
               {unreadMessages > 0 && (
-                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-destructive border-2 border-background" />
+                <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-destructive border-2 border-background" />
               )}
             </div>
-            Messages
+            <span className="tracking-wide">Messages</span>
           </button>
         </motion.div>
       </nav>

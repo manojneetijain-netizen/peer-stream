@@ -63,7 +63,7 @@ const RightSidebar = ({ currentUserId }: RightSidebarProps) => {
   const categoryLabels = ["TRENDING", "TECHNOLOGY", "PHOTOGRAPHY", "DESIGN", "CULTURE"];
 
   return (
-    <aside className="sticky top-0 h-full w-80 flex flex-col gap-5 py-6 px-4 overflow-y-auto">
+    <aside className="sticky top-0 h-screen w-80 flex flex-col gap-5 py-6 px-4 overflow-y-auto">
       {/* Search */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
         <PostSearch />

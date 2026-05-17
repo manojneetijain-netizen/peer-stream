@@ -71,15 +71,15 @@ const FeedSidebar = ({ currentUserId, onMessagesClick, profile }: FeedSidebarPro
   const initials = (profile?.display_name || profile?.username || "?").slice(0, 2).toUpperCase();
 
   return (
-    <aside className="sticky top-0 h-screen w-64 flex flex-col py-4 px-4 overflow-y-auto">
+    <aside className="sticky top-0 h-screen w-64 flex flex-col py-4 px-4 min-h-0">
       {/* Logo */}
-      <Link to="/" className="mb-4 px-3 flex items-center gap-2">
-        <img src={pulseLogo} alt="Pulse logo" width={72} height={72} className="w-18 h-18 drop-shadow-[0_0_18px_hsl(var(--primary)/0.55)]" style={{ width: 72, height: 72 }} />
+      <Link to="/" className="mb-3 px-3 flex items-center gap-2 shrink-0">
+        <img src={pulseLogo} alt="Pulse logo" width={56} height={56} className="drop-shadow-[0_0_18px_hsl(var(--primary)/0.55)]" style={{ width: 56, height: 56 }} />
         <span className="text-2xl font-black tracking-tight text-foreground uppercase">Pulse</span>
       </Link>
 
       {/* Nav */}
-      <nav className="flex-1 space-y-0.5">
+      <nav className="flex-1 min-h-0 overflow-y-auto space-y-0.5 pr-1">
         {navItems.map((item, i) => {
           const profilePath = item.path === "/profile" ? `/profile/${currentUserId}` : item.path;
           const isActive = item.path === "/profile"

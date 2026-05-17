@@ -141,7 +141,7 @@ const FeedSidebar = ({ currentUserId, onMessagesClick, profile }: FeedSidebarPro
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
         onClick={() => navigate("/create")}
-        className="mb-4 w-full flex items-center justify-center gap-2 px-4 py-3 rounded-full bg-gradient-to-r from-primary to-accent text-primary-foreground text-sm font-bold hover:opacity-90 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-[0_4px_20px_hsl(var(--pulse-blue)/0.3)]"
+        className="shrink-0 mt-3 mb-3 w-full flex items-center justify-center gap-2 px-4 py-3 rounded-full bg-gradient-to-r from-primary to-accent text-primary-foreground text-sm font-bold hover:opacity-90 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-[0_4px_20px_hsl(var(--pulse-blue)/0.3)]"
       >
         <Plus className="w-4 h-4" />
         CREATE PULSE

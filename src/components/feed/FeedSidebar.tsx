@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import ThemeToggle from "@/components/feed/ThemeToggle";
 import { supabase } from "@/integrations/supabase/client";
+import pulseLogo from "@/assets/logo-pulse.png";
 import {
   Home, Compass, Bell, User, MessageCircle,
   Bookmark, List, LogOut, TrendingUp, Film,

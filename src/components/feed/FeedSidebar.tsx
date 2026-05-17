@@ -73,11 +73,7 @@ const FeedSidebar = ({ currentUserId, onMessagesClick, profile }: FeedSidebarPro
     <aside className="sticky top-0 h-screen w-64 flex flex-col py-6 px-4">
       {/* Logo */}
       <Link to="/" className="mb-8 px-3 flex items-center gap-2">
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-          <svg viewBox="0 0 24 24" className="w-4 h-4 text-primary-foreground" fill="currentColor">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
-          </svg>
-        </div>
+        <img src={pulseLogo} alt="Pulse logo" width={32} height={32} className="w-8 h-8 drop-shadow-[0_0_12px_hsl(var(--primary)/0.45)]" />
         <span className="text-xl font-black tracking-tight text-foreground uppercase">Pulse</span>
       </Link>
 

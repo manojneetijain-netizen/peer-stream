@@ -148,10 +148,10 @@ const FeedSidebar = ({ currentUserId, onMessagesClick, profile }: FeedSidebarPro
       </motion.button>
 
       {/* Theme toggle */}
-      <ThemeToggle className="mb-3" />
+      <ThemeToggle className="shrink-0 mb-3" />
 
       {/* User profile card */}
-      <div className="island-card p-3 flex items-center gap-3">
+      <div className="shrink-0 island-card p-3 flex items-center gap-3">
         <Link to={`/profile/${currentUserId}`}>
           <Avatar className="w-10 h-10 ring-2 ring-primary/20 transition-all duration-200 hover:ring-primary/50">
             <AvatarImage src={profile?.avatar_url || undefined} />

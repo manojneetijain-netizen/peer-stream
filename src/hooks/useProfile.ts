@@ -16,7 +16,7 @@ export function useProfile(userId: string | undefined) {
       .select("id, user_id, username, display_name, avatar_url, cover_url, bio, is_verified, is_private, pinned_post_id, created_at, updated_at")
       .eq("user_id", userId)
       .single();
-    setProfile(data);
+    setProfile(data as Profile | null);
     setLoading(false);
   }, [userId]);
 

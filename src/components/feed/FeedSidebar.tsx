@@ -74,8 +74,8 @@ const FeedSidebar = ({ currentUserId, onMessagesClick, profile }: FeedSidebarPro
     <aside className="sticky top-0 h-screen w-64 flex flex-col py-6 px-4">
       {/* Logo */}
       <Link to="/" className="mb-8 px-3 flex items-center gap-2">
-        <img src={pulseLogo} alt="Pulse logo" width={32} height={32} className="w-8 h-8 drop-shadow-[0_0_12px_hsl(var(--primary)/0.45)]" />
-        <span className="text-xl font-black tracking-tight text-foreground uppercase">Pulse</span>
+        <img src={pulseLogo} alt="Pulse logo" width={56} height={56} className="w-14 h-14 drop-shadow-[0_0_16px_hsl(var(--primary)/0.55)]" />
+        <span className="text-2xl font-black tracking-tight text-foreground uppercase">Pulse</span>
       </Link>
 
       {/* Nav */}

@@ -28,8 +28,8 @@ const Navbar = () => {
     >
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
         <a href="#" className="flex items-center gap-2">
-          <img src={pulseLogo} alt="Pulse logo" width={32} height={32} className="w-8 h-8" />
-          <span className="text-xl font-bold gradient-text tracking-tight">Pulse</span>
+          <img src={pulseLogo} alt="Pulse logo" width={48} height={48} className="w-12 h-12 drop-shadow-[0_0_14px_hsl(var(--primary)/0.5)]" />
+          <span className="text-2xl font-bold gradient-text tracking-tight">Pulse</span>
         </a>
 
         <div className="hidden md:flex items-center gap-8">

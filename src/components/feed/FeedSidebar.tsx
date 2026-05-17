@@ -74,12 +74,12 @@ const FeedSidebar = ({ currentUserId, onMessagesClick, profile }: FeedSidebarPro
     <aside className="sticky top-0 h-full w-64 flex flex-col py-4 px-4 min-h-0">
       {/* Logo */}
       <Link to="/" className="mb-3 px-3 flex items-center gap-2 shrink-0">
-        <img src={pulseLogo} alt="Pulse logo" width={36} height={36} className="drop-shadow-[0_0_18px_hsl(var(--primary)/0.55)]" style={{ width: 36, height: 36 }} />
+        <img src={pulseLogo} alt="Pulse logo" width={100} height={100} className="drop-shadow-[0_0_18px_hsl(var(--primary)/0.55)]" style={{ width: 100, height: 100 }} />
         <span className="text-2xl font-black tracking-tight text-foreground uppercase">Pulse</span>
       </Link>
 
       {/* Nav */}
-      <nav className="flex-1 min-h-0 overflow-y-auto space-y-0.5 pr-1">
+      <nav className="flex-1 min-h-0 overflow-y-auto space-y-2 pr-1 mt-4">
         {navItems.map((item, i) => {
           const profilePath = item.path === "/profile" ? `/profile/${currentUserId}` : item.path;
           const isActive = item.path === "/profile"
@@ -96,19 +96,18 @@ const FeedSidebar = ({ currentUserId, onMessagesClick, profile }: FeedSidebarPro
             >
               <Link
                 to={profilePath}
-                className={`flex items-center gap-3.5 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 group ${
-                  isActive
-                    ? "text-foreground"
-                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/40"
-                }`}
+                className={`flex items-center gap-4 px-4 py-3.5 rounded-xl text-base font-bold transition-all duration-200 group ${isActive
+                  ? "text-foreground bg-secondary/20"
+                  : "text-muted-foreground hover:text-foreground hover:bg-secondary/40"
+                  }`}
               >
                 <div className="relative">
-                  <item.icon className={`w-5 h-5 transition-transform duration-200 group-hover:scale-110 ${isActive ? "text-foreground" : ""}`} />
+                  <item.icon className={`w-6 h-6 transition-transform duration-200 group-hover:scale-110 ${isActive ? "text-foreground" : ""}`} />
                   {hasBadge && (
-                    <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-destructive border-2 border-background" />
+                    <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-destructive border-2 border-background" />
                   )}
                 </div>
-                {item.label}
+                <span className="tracking-wide">{item.label}</span>
               </Link>
             </motion.div>
           );

@@ -71,15 +71,15 @@ const FeedSidebar = ({ currentUserId, onMessagesClick, profile }: FeedSidebarPro
   const initials = (profile?.display_name || profile?.username || "?").slice(0, 2).toUpperCase();
 
   return (
-    <aside className="sticky top-0 h-screen w-64 flex flex-col py-4 px-4 overflow-y-auto">
+    <aside className="sticky top-0 h-screen w-64 flex flex-col py-4 px-4 min-h-0">
       {/* Logo */}
-      <Link to="/" className="mb-4 px-3 flex items-center gap-2">
-        <img src={pulseLogo} alt="Pulse logo" width={72} height={72} className="w-18 h-18 drop-shadow-[0_0_18px_hsl(var(--primary)/0.55)]" style={{ width: 72, height: 72 }} />
+      <Link to="/" className="mb-3 px-3 flex items-center gap-2 shrink-0">
+        <img src={pulseLogo} alt="Pulse logo" width={56} height={56} className="drop-shadow-[0_0_18px_hsl(var(--primary)/0.55)]" style={{ width: 56, height: 56 }} />
         <span className="text-2xl font-black tracking-tight text-foreground uppercase">Pulse</span>
       </Link>
 
       {/* Nav */}
-      <nav className="flex-1 space-y-0.5">
+      <nav className="flex-1 min-h-0 overflow-y-auto space-y-0.5 pr-1">
         {navItems.map((item, i) => {
           const profilePath = item.path === "/profile" ? `/profile/${currentUserId}` : item.path;
           const isActive = item.path === "/profile"
@@ -141,17 +141,17 @@ const FeedSidebar = ({ currentUserId, onMessagesClick, profile }: FeedSidebarPro
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
         onClick={() => navigate("/create")}
-        className="mb-4 w-full flex items-center justify-center gap-2 px-4 py-3 rounded-full bg-gradient-to-r from-primary to-accent text-primary-foreground text-sm font-bold hover:opacity-90 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-[0_4px_20px_hsl(var(--pulse-blue)/0.3)]"
+        className="shrink-0 mt-3 mb-3 w-full flex items-center justify-center gap-2 px-4 py-3 rounded-full bg-gradient-to-r from-primary to-accent text-primary-foreground text-sm font-bold hover:opacity-90 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-[0_4px_20px_hsl(var(--pulse-blue)/0.3)]"
       >
         <Plus className="w-4 h-4" />
         CREATE PULSE
       </motion.button>
 
       {/* Theme toggle */}
-      <ThemeToggle className="mb-3" />
+      <ThemeToggle className="shrink-0 mb-3" />
 
       {/* User profile card */}
-      <div className="island-card p-3 flex items-center gap-3">
+      <div className="shrink-0 island-card p-3 flex items-center gap-3">
         <Link to={`/profile/${currentUserId}`}>
           <Avatar className="w-10 h-10 ring-2 ring-primary/20 transition-all duration-200 hover:ring-primary/50">
             <AvatarImage src={profile?.avatar_url || undefined} />

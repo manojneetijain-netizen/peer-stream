@@ -33,10 +33,10 @@ const ShareMenu = ({ postId }: ShareMenuProps) => {
     <div className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="text-muted-foreground hover:text-foreground transition-colors"
+        className="text-muted-foreground hover:text-foreground transition-colors group"
         title="Share"
       >
-        <Share2 className="w-4 h-4" />
+        <Share2 className="w-5 h-5 group-hover:text-foreground" />
       </button>
 
       {open && (

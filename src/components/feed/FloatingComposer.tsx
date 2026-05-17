@@ -63,7 +63,7 @@ const FloatingComposer = ({ userId, onCreated }: FloatingComposerProps) => {
         onClick={() => setOpen(!open)}
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.9 }}
-        className="fixed bottom-20 lg:bottom-8 right-6 z-[65] w-14 h-14 rounded-full bg-gradient-to-br from-primary to-accent text-primary-foreground shadow-[0_8px_30px_hsl(var(--pulse-blue)/0.4)] flex items-center justify-center"
+        className="fixed bottom-20 lg:bottom-8 right-6 z-[65] w-14 h-14 rounded-full bg-gradient-to-br from-primary to-accent text-primary-foreground shadow-[0_8px_30px_hsl(var(--pulse-blue)/0.4)] flex items-center justify-center lg:hidden"
       >
         <motion.div animate={{ rotate: open ? 45 : 0 }} transition={{ duration: 0.2 }}>
           <Plus className="w-6 h-6" />

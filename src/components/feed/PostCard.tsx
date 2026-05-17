@@ -193,33 +193,36 @@ const PostCard = ({ post, currentUserId, onUpdate, isBlocked, isMuted, onBlock, 
       {post.content && <HashtagRenderer content={post.content} />}
       {images.length > 0 && <ImageCarousel images={images} />}
       {(post as any).video_url && (
-        <video src={(post as any).video_url} controls className="mt-3 w-full rounded-xl max-h-96 object-cover" />
+        <div className="relative mt-3 w-full overflow-hidden rounded-xl bg-black/90">
+          <video src={(post as any).video_url} muted loop playsInline autoPlay className="absolute inset-0 w-full h-full object-cover blur-2xl opacity-40 scale-110 pointer-events-none" />
+          <video src={(post as any).video_url} controls className="relative w-full max-h-[500px] object-contain z-10" />
+        </div>
       )}
       <PollDisplay postId={post.id} currentUserId={currentUserId} />
       {(post as any).quoted_post_id && <QuotedPostCard quotedPostId={(post as any).quoted_post_id} />}
 
       {/* Actions */}
-      <div className="flex items-center gap-3 mt-4 pt-3 border-t border-border/30">
+      <div className="flex items-center gap-5 mt-4 pt-3 border-t border-border/30">
         <button onClick={toggleLike} className="flex items-center gap-1.5 text-sm transition-colors group">
-          <Heart className={`w-4 h-4 transition-colors ${liked ? "fill-destructive text-destructive" : "text-muted-foreground group-hover:text-foreground"}`} />
+          <Heart className={`w-5 h-5 transition-colors ${liked ? "fill-destructive text-destructive" : "text-muted-foreground group-hover:text-foreground"}`} />
           <span className={liked ? "text-destructive" : "text-muted-foreground group-hover:text-foreground"}>{likesCount}</span>
         </button>
-        <button onClick={() => setShowComments(!showComments)} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
-          <MessageCircle className="w-4 h-4" />
+        <button onClick={() => setShowComments(!showComments)} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors group">
+          <MessageCircle className="w-5 h-5 group-hover:text-foreground" />
           <span>{post.comments_count}</span>
         </button>
         <button onClick={toggleRepost} className="flex items-center gap-1.5 text-sm transition-colors group">
-          <Repeat2 className={`w-4 h-4 transition-colors ${reposted ? "text-accent" : "text-muted-foreground group-hover:text-foreground"}`} />
+          <Repeat2 className={`w-5 h-5 transition-colors ${reposted ? "text-accent" : "text-muted-foreground group-hover:text-foreground"}`} />
           <span className={reposted ? "text-accent" : "text-muted-foreground group-hover:text-foreground"}>{repostsCount}</span>
         </button>
-        <button onClick={() => setShowQuote(true)} className="text-muted-foreground hover:text-foreground transition-colors" title="Quote repost">
-          <Quote className="w-4 h-4" />
+        <button onClick={() => setShowQuote(true)} className="text-muted-foreground hover:text-foreground transition-colors group" title="Quote repost">
+          <Quote className="w-5 h-5 group-hover:text-foreground" />
         </button>
         <ReactionsPicker postId={post.id} currentUserId={currentUserId} myReaction={post.my_reaction} reactionCounts={post.reaction_counts} onUpdate={onUpdate} />
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex items-center gap-4">
           <ShareMenu postId={post.id} />
-          <button onClick={toggleBookmark} className="text-muted-foreground hover:text-foreground transition-colors" onContextMenu={(e) => { e.preventDefault(); if (bookmarked) setShowFolders(true); }}>
-            <Bookmark className={`w-4 h-4 ${bookmarked ? "fill-foreground text-foreground" : ""}`} />
+          <button onClick={toggleBookmark} className="text-muted-foreground hover:text-foreground transition-colors group" onContextMenu={(e) => { e.preventDefault(); if (bookmarked) setShowFolders(true); }}>
+            <Bookmark className={`w-5 h-5 ${bookmarked ? "fill-foreground text-foreground" : "group-hover:text-foreground"}`} />
           </button>
         </div>
       </div>

@@ -71,11 +71,11 @@ const FeedSidebar = ({ currentUserId, onMessagesClick, profile }: FeedSidebarPro
   const initials = (profile?.display_name || profile?.username || "?").slice(0, 2).toUpperCase();
 
   return (
-    <aside className="sticky top-0 h-screen w-64 flex flex-col py-6 px-4">
+    <aside className="sticky top-0 h-screen w-64 flex flex-col py-4 px-4 overflow-y-auto">
       {/* Logo */}
-      <Link to="/" className="mb-8 px-3 flex items-center gap-2">
-        <img src={pulseLogo} alt="Pulse logo" width={88} height={88} className="w-22 h-22 drop-shadow-[0_0_20px_hsl(var(--primary)/0.6)]" style={{ width: 88, height: 88 }} />
-        <span className="text-3xl font-black tracking-tight text-foreground uppercase">Pulse</span>
+      <Link to="/" className="mb-4 px-3 flex items-center gap-2">
+        <img src={pulseLogo} alt="Pulse logo" width={72} height={72} className="w-18 h-18 drop-shadow-[0_0_18px_hsl(var(--primary)/0.55)]" style={{ width: 72, height: 72 }} />
+        <span className="text-2xl font-black tracking-tight text-foreground uppercase">Pulse</span>
       </Link>
 
       {/* Nav */}

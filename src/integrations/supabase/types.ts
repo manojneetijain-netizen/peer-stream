@@ -596,10 +596,13 @@ export type Database = {
       }
       posts: {
         Row: {
+          audio_url: string | null
           content: string
           created_at: string
           id: string
           image_url: string | null
+          is_flagged: boolean | null
+          link_metadata: Json | null
           quoted_post_id: string | null
           scheduled_at: string | null
           type: string
@@ -607,10 +610,13 @@ export type Database = {
           video_url: string | null
         }
         Insert: {
+          audio_url?: string | null
           content: string
           created_at?: string
           id?: string
           image_url?: string | null
+          is_flagged?: boolean | null
+          link_metadata?: Json | null
           quoted_post_id?: string | null
           scheduled_at?: string | null
           type?: string
@@ -618,10 +624,13 @@ export type Database = {
           video_url?: string | null
         }
         Update: {
+          audio_url?: string | null
           content?: string
           created_at?: string
           id?: string
           image_url?: string | null
+          is_flagged?: boolean | null
+          link_metadata?: Json | null
           quoted_post_id?: string | null
           scheduled_at?: string | null
           type?: string

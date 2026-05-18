@@ -5,7 +5,7 @@ import { componentTagger } from "lovable-tagger";
 
 const customLoggerPlugin = () => ({
   name: 'custom-logger',
-  configureServer(server) {
+  configureServer(server: any) {
     server.printUrls = () => {
       const urls = server.resolvedUrls;
       if (!urls) return;
@@ -27,7 +27,7 @@ const customLoggerPlugin = () => ({
       console.log(`  ${cyan}│${reset}   ${green}➜${reset}  ${bold}Local:${reset}   ${localUrl.padEnd(31, " ")}${cyan}│${reset}`);
       
       if (urls.network && urls.network.length > 0) {
-        urls.network.forEach(url => {
+        urls.network.forEach((url: string) => {
           console.log(`  ${cyan}│${reset}   ${green}➜${reset}  ${bold}Network:${reset} ${url.padEnd(31, " ")}${cyan}│${reset}`);
         });
       }

@@ -5,7 +5,7 @@ import { componentTagger } from "lovable-tagger";
 
 const customLoggerPlugin = () => ({
   name: 'custom-logger',
-  configureServer(server) {
+  configureServer(server: any) {
     server.printUrls = () => {
       const urls = server.resolvedUrls;
       if (!urls) return;

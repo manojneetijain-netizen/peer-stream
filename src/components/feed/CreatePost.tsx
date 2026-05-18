@@ -6,6 +6,7 @@ import PollCreator from "./PollCreator";
 import PostScheduler from "./PostScheduler";
 import DraftManager from "./DraftManager";
 import VideoUploader from "./VideoUploader";
+import AudioRecorder from "./AudioRecorder";
 import { toast } from "sonner";
 
 interface CreatePostProps {
@@ -23,7 +24,42 @@ const CreatePost = ({ userId, onCreated }: CreatePostProps) => {
   const [showDrafts, setShowDrafts] = useState(false);
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoPreview, setVideoPreview] = useState<string | null>(null);
+  const [audioFile, setAudioFile] = useState<File | null>(null);
+  const [suggestions, setSuggestions] = useState<any[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const handleTextChange = async (val: string) => {
+    setContent(val);
+    const words = val.split(/\s+/);
+    const lastWord = words[words.length - 1];
+    
+    if (lastWord && lastWord.startsWith("@") && lastWord.length > 1) {
+      const query = lastWord.slice(1);
+      const { data } = await supabase
+        .from("profiles")
+        .select("user_id, username, display_name, avatar_url")
+        .ilike("username", `${query}%`)
+        .limit(5);
+        
+      if (data && data.length > 0) {
+        setSuggestions(data);
+        setShowSuggestions(true);
+      } else {
+        setShowSuggestions(false);
+      }
+    } else {
+      setShowSuggestions(false);
+    }
+  };
+
+  const selectMention = (username: string) => {
+    const words = content.split(/\s+/);
+    words[words.length - 1] = `@${username} `;
+    setContent(words.join(" "));
+    setShowSuggestions(false);
+    setSuggestions([]);
+  };
 
   const handleImages = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -62,7 +98,7 @@ const CreatePost = ({ userId, onCreated }: CreatePostProps) => {
   };
 
   const handleSubmit = async () => {
-    if (!content.trim() && imageFiles.length === 0 && !videoFile) return;
+    if (!content.trim() && imageFiles.length === 0 && !videoFile && !audioFile) return;
     setSubmitting(true);
 
     // Upload video if present
@@ -75,6 +111,16 @@ const CreatePost = ({ userId, onCreated }: CreatePostProps) => {
       videoUrl = publicUrl;
     }
     setSubmitting(true);
+
+    // Upload audio if present
+    let audioUrl: string | null = null;
+    if (audioFile) {
+      const ext = audioFile.name.split(".").pop();
+      const path = `${userId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      await supabase.storage.from("post-audio").upload(path, audioFile);
+      const { data: { publicUrl } } = supabase.storage.from("post-audio").getPublicUrl(path);
+      audioUrl = publicUrl;
+    }
 
     // Upload images
     const uploadedUrls: string[] = [];
@@ -122,6 +168,7 @@ const CreatePost = ({ userId, onCreated }: CreatePostProps) => {
         content: content.trim(),
         image_url: uploadedUrls[0] || null,
         video_url: videoUrl,
+        audio_url: audioUrl,
         scheduled_at: scheduledAt?.toISOString() || null,
         is_flagged: isFlagged,
         link_metadata: linkMetadata,
@@ -195,6 +242,7 @@ const CreatePost = ({ userId, onCreated }: CreatePostProps) => {
     setScheduledAt(null);
     setVideoFile(null);
     setVideoPreview(null);
+    setAudioFile(null);
     setSubmitting(false);
     onCreated();
   };
@@ -203,11 +251,40 @@ const CreatePost = ({ userId, onCreated }: CreatePostProps) => {
     <div className="island-card p-4">
       <textarea
         value={content}
-        onChange={(e) => setContent(e.target.value)}
+        onChange={(e) => handleTextChange(e.target.value)}
         placeholder="What's on your mind? Use #hashtags and @mentions!"
         rows={3}
         className="w-full bg-transparent text-foreground placeholder:text-muted-foreground text-sm resize-none focus:outline-none"
       />
+      {showSuggestions && suggestions.length > 0 && (
+        <div className="mt-1 mb-2 max-h-40 overflow-y-auto glass-card rounded-xl border border-border/20 shadow-lg p-1.5 space-y-0.5">
+          {suggestions.map((u) => {
+            const initials = (u.display_name || u.username || "?").slice(0, 2).toUpperCase();
+            return (
+              <button
+                key={u.user_id}
+                onClick={() => selectMention(u.username)}
+                className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-secondary/40 text-left transition-colors"
+              >
+                <div className="w-6 h-6 rounded-full overflow-hidden bg-secondary flex items-center justify-center text-[10px] font-bold text-foreground">
+                  {u.avatar_url ? (
+                    <img src={u.avatar_url} alt={u.username} className="w-full h-full object-cover" />
+                  ) : (
+                    initials
+                  )}
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-foreground leading-none">{u.display_name || u.username}</p>
+                  {u.username && <p className="text-[10px] text-muted-foreground leading-none">@{u.username}</p>}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      )}
+      <div className="w-full">
+        <AudioRecorder onAudioReady={setAudioFile} />
+      </div>
       {imagePreviews.length > 0 && (
         <div className="mt-2 flex gap-2 overflow-x-auto pb-2">
           {imagePreviews.map((preview, i) => (
@@ -265,7 +342,7 @@ const CreatePost = ({ userId, onCreated }: CreatePostProps) => {
         <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={handleImages} />
         <button
           onClick={handleSubmit}
-          disabled={submitting || (!content.trim() && imageFiles.length === 0 && !videoFile)}
+          disabled={submitting || (!content.trim() && imageFiles.length === 0 && !videoFile && !audioFile)}
           className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-pulse-blue to-pulse-cyan text-foreground text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
         >
           <Send className="w-4 h-4" />

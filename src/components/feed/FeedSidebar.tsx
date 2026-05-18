@@ -9,7 +9,7 @@ import pulseLogo from "@/assets/logo-pulse.png";
 import {
   Home, Compass, Bell, User, MessageCircle,
   Bookmark, List, LogOut, TrendingUp, Film,
-  Plus, MoreHorizontal,
+  Plus, MoreHorizontal, Bot,
 } from "lucide-react";
 
 interface FeedSidebarProps {
@@ -29,6 +29,7 @@ const navItems = [
   { label: "Trending", icon: TrendingUp, path: "/trending" },
   { label: "Bookmarks", icon: Bookmark, path: "/bookmarks" },
   { label: "Lists", icon: List, path: "/lists" },
+  { label: "AI Hub", icon: Bot, path: "/ai-hub", glow: true },
 ];
 
 const FeedSidebar = ({ currentUserId, onMessagesClick, profile, isMessagesView, onNavClick }: FeedSidebarProps) => {
@@ -105,7 +106,9 @@ const FeedSidebar = ({ currentUserId, onMessagesClick, profile, isMessagesView, 
                   }`}
               >
                 <div className="relative">
-                  <item.icon className={`w-6 h-6 transition-transform duration-200 group-hover:scale-110 ${isActive ? "text-foreground" : ""}`} />
+                  <item.icon className={`w-6 h-6 transition-transform duration-200 group-hover:scale-110 ${
+                    isActive ? "text-foreground" : (item as any).glow ? "text-primary drop-shadow-[0_0_6px_hsl(var(--primary)/0.8)]" : ""
+                  }`} />
                   {hasBadge && (
                     <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-destructive border-2 border-background" />
                   )}

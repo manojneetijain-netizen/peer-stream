@@ -16,6 +16,7 @@ import QuoteRepostModal from "./QuoteRepostModal";
 import ShareMenu from "./ShareMenu";
 import ReportModal from "./ReportModal";
 import BookmarkFolders from "./BookmarkFolders";
+import AudioPlayer from "./AudioPlayer";
 
 interface PostCardProps {
   post: PostWithDetails;
@@ -209,6 +210,8 @@ const PostCard = ({ post, currentUserId, onUpdate, isBlocked, isMuted, onBlock, 
             <video src={(post as any).video_url} controls className="relative w-full max-h-[500px] object-contain z-10" />
           </div>
         )}
+        
+        {(post as any).audio_url && <AudioPlayer src={(post as any).audio_url} />}
         
         {(post as any).link_metadata && (
           <a href={(post as any).link_metadata.url} target="_blank" rel="noopener noreferrer" className="mt-3 block border border-border/50 rounded-xl overflow-hidden hover:border-border transition-colors group relative z-10">

@@ -23,6 +23,7 @@ import Reels from "./pages/Reels";
 import FollowRequests from "./pages/FollowRequests";
 import CreatePostPage from "./pages/CreatePost";
 import NotFound from "./pages/NotFound";
+import AIHub from "./pages/AIHub";
 
 const queryClient = new QueryClient();
 
@@ -50,6 +51,7 @@ const AnimatedRoutes = () => {
         <Route path="/explore" element={<PageTransition><ExplorePage /></PageTransition>} />
         <Route path="/reels" element={<Reels />} />
         <Route path="/follow-requests" element={<PageTransition><FollowRequests /></PageTransition>} />
+        <Route path="/ai-hub" element={<PageTransition><AIHub /></PageTransition>} />
         <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
       </Routes>
     </AnimatePresence>

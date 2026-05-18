@@ -5,7 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import OnlineIndicator from "./OnlineIndicator";
 import TypingIndicator from "./TypingIndicator";
-import { Send, ArrowLeft, PenSquare, Search, X, Trash2, MoreVertical } from "lucide-react";
+import AIAssistant from "./AIAssistant";
+import { Send, ArrowLeft, PenSquare, Search, X, Trash2, MoreVertical, Check, CheckCheck, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 interface Conversation {
@@ -48,6 +49,7 @@ const MessagesPage = ({ currentUserId, onBack, isOnline, isTypingTo, setTyping }
   const [deletingMsgId, setDeletingMsgId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
+  const [showAI, setShowAI] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState<{
     display_name: string | null;
     username: string | null;
@@ -191,6 +193,11 @@ const MessagesPage = ({ currentUserId, onBack, isOnline, isTypingTo, setTyping }
 
   const otherIsTyping = selectedUser && isTypingTo ? isTypingTo(selectedUser, currentUserId) : false;
 
+  // AI Assistant view
+  if (showAI) {
+    return <AIAssistant onBack={() => setShowAI(false)} />;
+  }
+
   // Chat view
   if (selectedUser) {
     const initials = (selectedProfile?.display_name || selectedProfile?.username || "?").slice(0, 2).toUpperCase();
@@ -258,14 +265,26 @@ const MessagesPage = ({ currentUserId, onBack, isOnline, isTypingTo, setTyping }
                     <Trash2 className="w-3 h-3" />
                   </button>
                 )}
-                <div
-                  className={`max-w-[75%] px-3.5 py-2 rounded-2xl text-sm ${
-                    m.sender_id === currentUserId
-                      ? "bg-gradient-to-r from-primary to-accent text-primary-foreground rounded-br-sm"
-                      : "glass-card text-foreground rounded-bl-sm"
-                  }`}
-                >
-                  {m.content}
+                <div className={`flex flex-col ${m.sender_id === currentUserId ? "items-end" : "items-start"}`}>
+                  <div
+                    className={`max-w-[75%] px-3.5 py-2 rounded-2xl text-sm ${
+                      m.sender_id === currentUserId
+                        ? "bg-gradient-to-r from-primary to-accent text-primary-foreground rounded-br-sm shadow-sm"
+                        : "glass-card text-foreground rounded-bl-sm"
+                    }`}
+                  >
+                    {m.content}
+                  </div>
+                  {m.sender_id === currentUserId && (
+                    <div className="flex items-center gap-1 mt-1 mr-1">
+                      <span className="text-[10px] text-muted-foreground">{new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                      {m.read ? (
+                        <CheckCheck className="w-3.5 h-3.5 text-primary" />
+                      ) : (
+                        <Check className="w-3.5 h-3.5 text-muted-foreground" />
+                      )}
+                    </div>
+                  )}
                 </div>
               </motion.div>
             ))}
@@ -389,17 +408,63 @@ const MessagesPage = ({ currentUserId, onBack, isOnline, isTypingTo, setTyping }
       )}
 
       {conversations.length === 0 && !showNewMessage ? (
-        <div className="p-8 text-center">
-          <p className="text-sm text-muted-foreground mb-3">No messages yet</p>
-          <button
-            onClick={() => setShowNewMessage(true)}
-            className="px-4 py-2 rounded-full bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
-          >
-            Start a conversation
-          </button>
+        <div>
+          {/* Always show AI even when no conversations */}
+          <div className="divide-y divide-border/20">
+            <motion.button
+              onClick={() => setShowAI(true)}
+              whileHover={{ backgroundColor: "hsl(var(--secondary) / 0.2)" }}
+              className="w-full flex items-center gap-3 p-3 transition-colors"
+            >
+              <div className="relative">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary via-accent to-purple-500 flex items-center justify-center shadow-[0_0_14px_hsl(var(--primary)/0.5)]">
+                  <Sparkles className="w-5 h-5 text-white" />
+                </div>
+                <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-green-500 border-2 border-background" />
+              </div>
+              <div className="flex-1 text-left">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-bold text-foreground">Pulse AI</span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/20 text-primary font-bold">AI</span>
+                </div>
+                <p className="text-xs text-muted-foreground truncate">Your personal AI assistant</p>
+              </div>
+            </motion.button>
+          </div>
+          <div className="p-8 text-center">
+            <p className="text-sm text-muted-foreground mb-3">No human messages yet</p>
+            <button
+              onClick={() => setShowNewMessage(true)}
+              className="px-4 py-2 rounded-full bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
+            >
+              Start a conversation
+            </button>
+          </div>
         </div>
+
       ) : (
         <div className="divide-y divide-border/20">
+          {/* Pulse AI pinned entry */}
+          <motion.button
+            onClick={() => setShowAI(true)}
+            whileHover={{ backgroundColor: "hsl(var(--secondary) / 0.2)" }}
+            className="w-full flex items-center gap-3 p-3 transition-colors"
+          >
+            <div className="relative">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary via-accent to-purple-500 flex items-center justify-center shadow-[0_0_14px_hsl(var(--primary)/0.5)]">
+                <Sparkles className="w-5 h-5 text-white" />
+              </div>
+              <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-green-500 border-2 border-background" />
+            </div>
+            <div className="flex-1 text-left">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-bold text-foreground">Pulse AI</span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/20 text-primary font-bold">AI</span>
+              </div>
+              <p className="text-xs text-muted-foreground truncate">Your personal AI assistant</p>
+            </div>
+          </motion.button>
+
           {conversations.map((conv) => {
             const initials = (conv.display_name || conv.username || "?").slice(0, 2).toUpperCase();
             return (

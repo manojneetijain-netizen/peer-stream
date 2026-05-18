@@ -7,6 +7,7 @@ import { extractHashtags } from "@/components/feed/HashtagRenderer";
 import PollCreator from "@/components/feed/PollCreator";
 import PostScheduler from "@/components/feed/PostScheduler";
 import VideoUploader from "@/components/feed/VideoUploader";
+import AIComposer from "@/components/feed/AIComposer";
 import { toast } from "sonner";
 import {
   ArrowLeft, Upload, Image, Film, Monitor,
@@ -304,6 +305,9 @@ const CreatePostPage = () => {
               </div>
             </div>
           </div>
+
+          {/* AI Writing Assistant */}
+          <AIComposer currentContent={content} onApply={(text) => setContent(text)} />
 
           {/* Tag People */}
           <div>

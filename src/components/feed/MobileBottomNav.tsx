@@ -1,14 +1,14 @@
 import { useState, useEffect, useCallback } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Home, Compass, MessageCircle, User, Film } from "lucide-react";
+import { Home, Compass, MessageCircle, User, Film, Bot } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 
 const navItems = [
   { label: "Feed", icon: Home, path: "/feed" },
   { label: "Reels", icon: Film, path: "/reels" },
-  { label: "Explore", icon: Compass, path: "/explore" },
+  { label: "AI Hub", icon: Bot, path: "/ai-hub" },
   { label: "Messages", icon: MessageCircle, path: "/feed", action: "messages" },
   { label: "Profile", icon: User, path: "/profile" },
 ];

@@ -1,8 +1,37 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface HashtagRendererProps {
   content: string;
 }
+
+const MentionLink = ({ username, label }: { username: string; label: string }) => {
+  const navigate = useNavigate();
+  
+  const handleClick = async () => {
+    const { data } = await supabase
+      .from("profiles")
+      .select("user_id")
+      .eq("username", username)
+      .maybeSingle();
+
+    if (data?.user_id) {
+      navigate(`/profile/${data.user_id}`);
+    } else {
+      toast.error(`User @${username} not found`);
+    }
+  };
+
+  return (
+    <span
+      onClick={handleClick}
+      className="text-accent hover:underline font-medium cursor-pointer"
+    >
+      {label}
+    </span>
+  );
+};
 
 const HashtagRenderer = ({ content }: HashtagRendererProps) => {
   // Split by hashtags and @mentions
@@ -26,15 +55,11 @@ const HashtagRenderer = ({ content }: HashtagRendererProps) => {
         if (part.startsWith("@")) {
           const username = part.slice(1);
           return (
-            <span
+            <MentionLink
               key={i}
-              className="text-accent hover:underline font-medium cursor-pointer"
-              onClick={() => {
-                // Navigate to user search - for now link style
-              }}
-            >
-              {part}
-            </span>
+              username={username}
+              label={part}
+            />
           );
         }
         return part;

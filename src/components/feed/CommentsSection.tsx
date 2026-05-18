@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Send, Trash2, CornerDownRight } from "lucide-react";
+import { Send, Trash2, CornerDownRight, Heart, MessageCircle } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface Comment {
   id: string;
@@ -12,6 +13,8 @@ interface Comment {
   parent_id: string | null;
   author: { username: string | null; display_name: string | null; avatar_url: string | null };
   replies?: Comment[];
+  like_count?: number;
+  liked_by_me?: boolean;
 }
 
 interface CommentsSectionProps {
@@ -20,11 +23,22 @@ interface CommentsSectionProps {
   onUpdate: () => void;
 }
 
+const timeAgo = (dateStr: string) => {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "now";
+  if (mins < 60) return `${mins}m`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h`;
+  return `${Math.floor(hrs / 24)}d`;
+};
+
 const CommentsSection = ({ postId, currentUserId, onUpdate }: CommentsSectionProps) => {
   const [comments, setComments] = useState<Comment[]>([]);
   const [text, setText] = useState("");
   const [replyTo, setReplyTo] = useState<{ id: string; name: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const fetchComments = async () => {
     const { data: rawComments } = await supabase
@@ -79,6 +93,15 @@ const CommentsSection = ({ postId, currentUserId, onUpdate }: CommentsSectionPro
 
   useEffect(() => {
     fetchComments();
+    // Real-time subscription
+    const channel = supabase
+      .channel(`comments-${postId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "comments", filter: `post_id=eq.${postId}` }, () => {
+        fetchComments();
+        onUpdate();
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
   }, [postId]);
 
   const addComment = async () => {
@@ -93,14 +116,15 @@ const CommentsSection = ({ postId, currentUserId, onUpdate }: CommentsSectionPro
     setText("");
     setReplyTo(null);
     setSubmitting(false);
-    fetchComments();
-    onUpdate();
   };
 
   const deleteComment = async (commentId: string) => {
     await supabase.from("comments").delete().eq("id", commentId);
-    fetchComments();
-    onUpdate();
+  };
+
+  const handleReply = (id: string, name: string) => {
+    setReplyTo({ id, name });
+    setTimeout(() => inputRef.current?.focus(), 50);
   };
 
   const renderComment = (c: Comment, isReply = false) => {
@@ -109,75 +133,112 @@ const CommentsSection = ({ postId, currentUserId, onUpdate }: CommentsSectionPro
     const authorName = c.author.display_name || c.author.username || "Anonymous";
 
     return (
-      <div key={c.id} className={`flex gap-2 group ${isReply ? "ml-8" : ""}`}>
-        {isReply && <CornerDownRight className="w-3 h-3 text-muted-foreground mt-2 shrink-0" />}
-        <Link to={`/profile/${c.user_id}`}>
-          <Avatar className={isReply ? "w-6 h-6" : "w-7 h-7"}>
+      <motion.div
+        key={c.id}
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        transition={{ duration: 0.2 }}
+        className={`flex gap-2.5 group ${isReply ? "ml-9 mt-1" : ""}`}
+      >
+        {isReply && <CornerDownRight className="w-3 h-3 text-muted-foreground mt-3 shrink-0" />}
+        <Link to={`/profile/${c.user_id}`} className="shrink-0">
+          <Avatar className={isReply ? "w-6 h-6 mt-1" : "w-8 h-8"}>
             <AvatarImage src={c.author.avatar_url || undefined} />
             <AvatarFallback className="bg-secondary text-foreground text-xs">{initials}</AvatarFallback>
           </Avatar>
         </Link>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <Link to={`/profile/${c.user_id}`} className="text-xs font-medium text-foreground hover:underline">
+          <div className="inline-block bg-secondary/40 rounded-2xl px-3 py-2 max-w-[85%]">
+            <Link to={`/profile/${c.user_id}`} className="text-xs font-semibold text-foreground hover:underline block mb-0.5">
               {authorName}
             </Link>
+            <p className="text-sm text-foreground/90 leading-snug">{c.content}</p>
+          </div>
+          <div className="flex items-center gap-3 mt-1 ml-2">
+            <span className="text-[10px] text-muted-foreground">{timeAgo(c.created_at)}</span>
             {!isReply && (
               <button
-                onClick={() => setReplyTo({ id: c.id, name: authorName })}
-                className="text-[10px] text-muted-foreground hover:text-primary transition-colors"
+                onClick={() => handleReply(c.id, authorName)}
+                className="text-[10px] font-semibold text-muted-foreground hover:text-primary transition-colors"
               >
                 Reply
               </button>
             )}
+            {isOwner && (
+              <button
+                onClick={() => deleteComment(c.id)}
+                className="text-[10px] text-muted-foreground/0 group-hover:text-muted-foreground hover:!text-destructive transition-all"
+                title="Delete"
+              >
+                Delete
+              </button>
+            )}
           </div>
-          <p className="text-sm text-muted-foreground">{c.content}</p>
         </div>
-        {isOwner && (
-          <button
-            onClick={() => deleteComment(c.id)}
-            className="opacity-0 group-hover:opacity-100 p-1 rounded text-muted-foreground hover:text-destructive transition-all"
-            title="Delete comment"
-          >
-            <Trash2 className="w-3 h-3" />
-          </button>
-        )}
-      </div>
+      </motion.div>
     );
   };
 
   return (
     <div className="mt-3 pt-3 border-t border-border/30 space-y-3">
-      {comments.map((c) => (
-        <div key={c.id} className="space-y-2">
-          {renderComment(c)}
-          {c.replies?.map((r) => renderComment(r, true))}
-        </div>
-      ))}
-
-      {replyTo && (
-        <div className="flex items-center gap-2 text-xs text-muted-foreground bg-secondary/30 rounded-lg px-3 py-1.5">
-          <CornerDownRight className="w-3 h-3" />
-          <span>Replying to <strong className="text-foreground">{replyTo.name}</strong></span>
-          <button onClick={() => setReplyTo(null)} className="ml-auto hover:text-foreground">✕</button>
-        </div>
+      {/* Comment count header */}
+      {comments.length > 0 && (
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide px-1">
+          {comments.reduce((acc, c) => acc + 1 + (c.replies?.length || 0), 0)} Comments
+        </p>
       )}
 
-      <div className="flex gap-2">
+      <AnimatePresence initial={false}>
+        {comments.map((c) => (
+          <div key={c.id} className="space-y-1.5">
+            {renderComment(c)}
+            {c.replies && c.replies.length > 0 && (
+              <div className="space-y-1.5">
+                {c.replies.map((r) => renderComment(r, true))}
+              </div>
+            )}
+          </div>
+        ))}
+      </AnimatePresence>
+
+      {/* Reply banner */}
+      <AnimatePresence>
+        {replyTo && (
+          <motion.div
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            className="flex items-center gap-2 text-xs bg-primary/10 border border-primary/20 rounded-xl px-3 py-2"
+          >
+            <MessageCircle className="w-3 h-3 text-primary shrink-0" />
+            <span className="text-muted-foreground">
+              Replying to <strong className="text-foreground">{replyTo.name}</strong>
+            </span>
+            <button onClick={() => setReplyTo(null)} className="ml-auto text-muted-foreground hover:text-foreground transition-colors text-base leading-none">✕</button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Input */}
+      <div className="flex gap-2 items-center">
         <input
+          ref={inputRef}
           value={text}
           onChange={(e) => setText(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && addComment()}
+          onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && addComment()}
           placeholder={replyTo ? `Reply to ${replyTo.name}...` : "Add a comment..."}
-          className="flex-1 px-3 py-2 rounded-lg bg-secondary/50 border border-border text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+          className="flex-1 px-3.5 py-2 rounded-full bg-secondary/50 border border-border/40 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
         />
-        <button
+        <motion.button
           onClick={addComment}
           disabled={submitting || !text.trim()}
-          className="p-2 rounded-lg bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-50"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          className="p-2 rounded-full bg-gradient-to-r from-primary to-accent text-primary-foreground hover:opacity-90 disabled:opacity-40 transition-opacity shrink-0"
         >
           <Send className="w-4 h-4" />
-        </button>
+        </motion.button>
       </div>
     </div>
   );

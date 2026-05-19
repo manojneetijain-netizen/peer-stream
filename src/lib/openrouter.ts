@@ -35,7 +35,7 @@ export async function streamChat(
     model = DEFAULT_MODEL,
     systemPrompt,
     temperature = 0.7,
-    maxTokens = 1024,
+    maxTokens = 4096,
   } = options;
 
   const payload = {
@@ -74,14 +74,16 @@ export async function streamChat(
   const reader = response.body!.getReader();
   const decoder = new TextDecoder();
   let full = "";
+  let buffer = ""; // carry-over for incomplete SSE lines
 
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    const text = decoder.decode(value, { stream: true });
-    const lines = text.split("\n").filter((l) => l.startsWith("data: "));
+  const processText = (text: string) => {
+    buffer += text;
+    const lines = buffer.split("\n");
+    // Keep the last (possibly incomplete) line in the buffer
+    buffer = lines.pop() ?? "";
     for (const line of lines) {
-      const json = line.slice(6);
+      if (!line.startsWith("data: ")) continue;
+      const json = line.slice(6).trim();
       if (json === "[DONE]") continue;
       try {
         const parsed = JSON.parse(json);
@@ -94,6 +96,17 @@ export async function streamChat(
         // ignore malformed chunks
       }
     }
+  };
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) {
+      // Flush any remaining bytes in the decoder
+      const tail = decoder.decode(undefined, { stream: false });
+      if (tail) processText(tail);
+      break;
+    }
+    processText(decoder.decode(value, { stream: true }));
   }
   return full;
 }

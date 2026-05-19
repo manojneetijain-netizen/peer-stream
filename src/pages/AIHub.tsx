@@ -115,7 +115,7 @@ const ChatOverlay = ({ agent, onClose, onFirstMessage }: { agent: Agent; onClose
     try {
       const history: ChatMessage[] = messages.filter(m => m.id !== "w").map(m => ({ role: m.role, content: m.content }));
       history.push({ role: "user", content: text });
-      await streamChat(history, { model: agent.model, systemPrompt: agent.systemPrompt, maxTokens: 800 },
+      await streamChat(history, { model: agent.model, systemPrompt: agent.systemPrompt, maxTokens: 4096 },
         chunk => setMessages(p => p.map(m => m.id === aid ? { ...m, content: m.content + chunk } : m)));
     } catch (e: any) { toast.error(e.message); setMessages(p => p.filter(m => m.id !== aid)); }
     finally { setStreaming(false); }

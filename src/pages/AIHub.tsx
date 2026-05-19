@@ -233,7 +233,10 @@ const ChatOverlay = ({ agent, onClose, onFirstMessage }: { agent: Agent; onClose
               {streaming ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
             </motion.button>
           </div>
-          <p className="text-[10px] text-muted-foreground/30 text-center mt-2">Powered by OpenRouter</p>
+          <p className="text-[10px] text-muted-foreground/40 text-center mt-2 flex items-center justify-center gap-1.5">
+            <Sparkles className="w-2.5 h-2.5 text-primary/60" />
+            <span>Pulse Intelligence · Responses may vary</span>
+          </p>
         </div>
       </motion.div>
     </motion.div>
@@ -245,17 +248,23 @@ const AgentCard = ({ agent, onClick, index }: { agent: Agent; onClick: () => voi
   <motion.button onClick={onClick}
     initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
     transition={{ delay: index * 0.08, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-    whileHover={{ y: -3 }} whileTap={{ scale: 0.99 }}
+    whileHover={{ y: -4 }} whileTap={{ scale: 0.99 }}
     className="island-card p-5 text-left w-full group relative overflow-hidden rounded-2xl"
-    style={{ '--hover-glow': agent.glowColor } as any}
   >
     {/* Top gradient line */}
     <div className={`absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r ${agent.gradient}`} />
+    {/* Hover glow halo */}
+    <div className={`absolute -inset-px rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none bg-gradient-to-br ${agent.gradient}`}
+      style={{ filter: "blur(24px)", opacity: 0, mixBlendMode: "screen" }} />
+    <div
+      className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+      style={{ background: `radial-gradient(600px circle at 50% 0%, ${agent.glowColor}, transparent 40%)` }}
+    />
 
-    <div className="flex items-start gap-4">
+    <div className="relative flex items-start gap-4">
       {/* Icon */}
-      <div className={`w-12 h-12 rounded-2xl ${agent.iconBg} flex items-center justify-center shrink-0 shadow-lg transition-transform group-hover:scale-105`}
-        style={{ boxShadow: `0 6px 20px ${agent.glowColor}` }}>
+      <div className={`w-12 h-12 rounded-2xl ${agent.iconBg} flex items-center justify-center shrink-0 shadow-lg transition-transform group-hover:scale-110 group-hover:rotate-3`}
+        style={{ boxShadow: `0 8px 24px ${agent.glowColor}` }}>
         <agent.Icon className="w-6 h-6 text-white" />
       </div>
 
@@ -365,24 +374,48 @@ const AIHub = () => {
 
             {/* Welcome banner */}
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
-              className="island-card p-6 relative overflow-hidden">
-              <div className="absolute -top-16 -right-16 w-48 h-48 bg-gradient-to-br from-primary/20 to-accent/10 rounded-full blur-3xl" />
-              <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-gradient-to-br from-violet-500/10 to-primary/5 rounded-full blur-2xl" />
+              className="island-card p-7 relative overflow-hidden">
+              {/* Layered ambient glows */}
+              <motion.div
+                animate={{ scale: [1, 1.15, 1], opacity: [0.6, 0.9, 0.6] }}
+                transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+                className="absolute -top-20 -right-20 w-64 h-64 bg-gradient-to-br from-primary/30 via-accent/20 to-transparent rounded-full blur-3xl"
+              />
+              <motion.div
+                animate={{ scale: [1, 1.2, 1], opacity: [0.4, 0.7, 0.4] }}
+                transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+                className="absolute -bottom-12 -left-12 w-44 h-44 bg-gradient-to-br from-violet-500/20 to-primary/10 rounded-full blur-3xl"
+              />
+              {/* Grid overlay */}
+              <div className="absolute inset-0 opacity-[0.04] pointer-events-none"
+                style={{ backgroundImage: "linear-gradient(hsl(var(--foreground)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--foreground)) 1px, transparent 1px)", backgroundSize: "32px 32px" }} />
+
               <div className="relative z-10">
-                <h2 className="text-xl font-black text-foreground mb-2">
-                  Welcome to your AI Hub ✨
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="h-px w-8 bg-gradient-to-r from-transparent to-primary/60" />
+                  <span className="text-[10px] font-black tracking-[0.2em] uppercase text-primary/80">Intelligence Suite</span>
+                </div>
+                <h2 className="text-2xl md:text-3xl font-black text-foreground mb-2 leading-tight">
+                  Welcome to your <span className="bg-gradient-to-r from-primary via-accent to-violet-500 bg-clip-text text-transparent">AI Hub</span>
                 </h2>
                 <p className="text-sm text-muted-foreground max-w-lg leading-relaxed">
-                  Supercharge your workflow with our specialized AI assistants. Choose a tool below to get started.
+                  Four specialized minds, one streamlined workspace. Pick an assistant and start creating.
                 </p>
-                <div className="flex items-center gap-3 mt-4">
-                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-green-500/10 border border-green-500/20">
-                    <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                <div className="flex flex-wrap items-center gap-2 mt-5">
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-green-500/10 border border-green-500/25 backdrop-blur-sm">
+                    <span className="relative flex w-1.5 h-1.5">
+                      <span className="absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75 animate-ping" />
+                      <span className="relative inline-flex rounded-full w-1.5 h-1.5 bg-green-500" />
+                    </span>
                     <span className="text-[11px] font-bold text-green-400">4 agents online</span>
                   </div>
-                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20">
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/25 backdrop-blur-sm">
                     <Zap className="w-3 h-3 text-primary" />
-                    <span className="text-[11px] font-bold text-primary">Powered by OpenRouter</span>
+                    <span className="text-[11px] font-bold text-primary">Pulse Intelligence</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-violet-500/10 border border-violet-500/25 backdrop-blur-sm">
+                    <Sparkles className="w-3 h-3 text-violet-400" />
+                    <span className="text-[11px] font-bold text-violet-400">Real-time</span>
                   </div>
                 </div>
               </div>

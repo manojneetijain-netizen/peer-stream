@@ -248,17 +248,23 @@ const AgentCard = ({ agent, onClick, index }: { agent: Agent; onClick: () => voi
   <motion.button onClick={onClick}
     initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
     transition={{ delay: index * 0.08, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-    whileHover={{ y: -3 }} whileTap={{ scale: 0.99 }}
+    whileHover={{ y: -4 }} whileTap={{ scale: 0.99 }}
     className="island-card p-5 text-left w-full group relative overflow-hidden rounded-2xl"
-    style={{ '--hover-glow': agent.glowColor } as any}
   >
     {/* Top gradient line */}
     <div className={`absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r ${agent.gradient}`} />
+    {/* Hover glow halo */}
+    <div className={`absolute -inset-px rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none bg-gradient-to-br ${agent.gradient}`}
+      style={{ filter: "blur(24px)", opacity: 0, mixBlendMode: "screen" }} />
+    <div
+      className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+      style={{ background: `radial-gradient(600px circle at 50% 0%, ${agent.glowColor}, transparent 40%)` }}
+    />
 
-    <div className="flex items-start gap-4">
+    <div className="relative flex items-start gap-4">
       {/* Icon */}
-      <div className={`w-12 h-12 rounded-2xl ${agent.iconBg} flex items-center justify-center shrink-0 shadow-lg transition-transform group-hover:scale-105`}
-        style={{ boxShadow: `0 6px 20px ${agent.glowColor}` }}>
+      <div className={`w-12 h-12 rounded-2xl ${agent.iconBg} flex items-center justify-center shrink-0 shadow-lg transition-transform group-hover:scale-110 group-hover:rotate-3`}
+        style={{ boxShadow: `0 8px 24px ${agent.glowColor}` }}>
         <agent.Icon className="w-6 h-6 text-white" />
       </div>
 

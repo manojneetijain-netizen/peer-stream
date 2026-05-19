@@ -368,24 +368,48 @@ const AIHub = () => {
 
             {/* Welcome banner */}
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
-              className="island-card p-6 relative overflow-hidden">
-              <div className="absolute -top-16 -right-16 w-48 h-48 bg-gradient-to-br from-primary/20 to-accent/10 rounded-full blur-3xl" />
-              <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-gradient-to-br from-violet-500/10 to-primary/5 rounded-full blur-2xl" />
+              className="island-card p-7 relative overflow-hidden">
+              {/* Layered ambient glows */}
+              <motion.div
+                animate={{ scale: [1, 1.15, 1], opacity: [0.6, 0.9, 0.6] }}
+                transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+                className="absolute -top-20 -right-20 w-64 h-64 bg-gradient-to-br from-primary/30 via-accent/20 to-transparent rounded-full blur-3xl"
+              />
+              <motion.div
+                animate={{ scale: [1, 1.2, 1], opacity: [0.4, 0.7, 0.4] }}
+                transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+                className="absolute -bottom-12 -left-12 w-44 h-44 bg-gradient-to-br from-violet-500/20 to-primary/10 rounded-full blur-3xl"
+              />
+              {/* Grid overlay */}
+              <div className="absolute inset-0 opacity-[0.04] pointer-events-none"
+                style={{ backgroundImage: "linear-gradient(hsl(var(--foreground)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--foreground)) 1px, transparent 1px)", backgroundSize: "32px 32px" }} />
+
               <div className="relative z-10">
-                <h2 className="text-xl font-black text-foreground mb-2">
-                  Welcome to your AI Hub ✨
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="h-px w-8 bg-gradient-to-r from-transparent to-primary/60" />
+                  <span className="text-[10px] font-black tracking-[0.2em] uppercase text-primary/80">Intelligence Suite</span>
+                </div>
+                <h2 className="text-2xl md:text-3xl font-black text-foreground mb-2 leading-tight">
+                  Welcome to your <span className="bg-gradient-to-r from-primary via-accent to-violet-500 bg-clip-text text-transparent">AI Hub</span>
                 </h2>
                 <p className="text-sm text-muted-foreground max-w-lg leading-relaxed">
-                  Supercharge your workflow with our specialized AI assistants. Choose a tool below to get started.
+                  Four specialized minds, one streamlined workspace. Pick an assistant and start creating.
                 </p>
-                <div className="flex items-center gap-3 mt-4">
-                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-green-500/10 border border-green-500/20">
-                    <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                <div className="flex flex-wrap items-center gap-2 mt-5">
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-green-500/10 border border-green-500/25 backdrop-blur-sm">
+                    <span className="relative flex w-1.5 h-1.5">
+                      <span className="absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75 animate-ping" />
+                      <span className="relative inline-flex rounded-full w-1.5 h-1.5 bg-green-500" />
+                    </span>
                     <span className="text-[11px] font-bold text-green-400">4 agents online</span>
                   </div>
-                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20">
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/25 backdrop-blur-sm">
                     <Zap className="w-3 h-3 text-primary" />
-                    <span className="text-[11px] font-bold text-primary">Powered by OpenRouter</span>
+                    <span className="text-[11px] font-bold text-primary">Pulse Intelligence</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-violet-500/10 border border-violet-500/25 backdrop-blur-sm">
+                    <Sparkles className="w-3 h-3 text-violet-400" />
+                    <span className="text-[11px] font-bold text-violet-400">Real-time</span>
                   </div>
                 </div>
               </div>

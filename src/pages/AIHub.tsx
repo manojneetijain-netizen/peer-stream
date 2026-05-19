@@ -233,7 +233,10 @@ const ChatOverlay = ({ agent, onClose, onFirstMessage }: { agent: Agent; onClose
               {streaming ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
             </motion.button>
           </div>
-          <p className="text-[10px] text-muted-foreground/30 text-center mt-2">Powered by OpenRouter</p>
+          <p className="text-[10px] text-muted-foreground/40 text-center mt-2 flex items-center justify-center gap-1.5">
+            <Sparkles className="w-2.5 h-2.5 text-primary/60" />
+            <span>Pulse Intelligence · Responses may vary</span>
+          </p>
         </div>
       </motion.div>
     </motion.div>
